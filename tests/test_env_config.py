@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from env_config import load_local_keys
+from echomind.env_config import load_local_keys
 
 
 class LocalEnvTests(unittest.TestCase):

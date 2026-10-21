@@ -6,7 +6,7 @@ import {resolve,join,sep} from 'node:path';
 import {createServer} from 'node:net';
 import assert from 'node:assert/strict';
 const root=resolve(import.meta.dirname,'..');
-const scratch=await mkdtemp(join(tmpdir(),'sos-mechanism-ui-'));
+const scratch=await mkdtemp(join(tmpdir(),'echomind-mechanism-ui-'));
 const socket=createServer();await new Promise(r=>socket.listen(0,'127.0.0.1',r));
 const port=socket.address().port;await new Promise(r=>socket.close(r));
 let backend,browser,ws;
@@ -18,7 +18,7 @@ async function until(fn,limit=20000) {
 }
 try {
   backend=spawn('python',['-u','server.py','--port',String(port)],{
-    cwd:root,env:{...process.env,SOS_PILOT_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'
+    cwd:root,env:{...process.env,ECHOMIND_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'
   });
   const url=`http://127.0.0.1:${port}`;
   await until(async()=> (await fetch(url+'/api/mechanism/bootstrap')).ok);

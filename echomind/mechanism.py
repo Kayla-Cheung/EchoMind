@@ -2,9 +2,9 @@
 import math
 from collections import Counter
 
-from channels import FORMAT_VERSION, CODER_VERSION
-from state_protocol import CORE_STATES, fingerprint
-from state_analysis import rates
+from .channels import FORMAT_VERSION, CODER_VERSION
+from .state_protocol import CORE_STATES, fingerprint
+from .state_analysis import rates
 
 PROTOCOL_ID = "memory-ratio-v1"
 LABELS = {"state_none": "平稳经历", "state_mild": "混合经历", "state_moderate": "不利经历"}

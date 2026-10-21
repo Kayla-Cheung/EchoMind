@@ -8,15 +8,15 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from datetime import datetime, timezone
 
-from design import CONDITIONS, CODER_VERSION
-from model_client import call, make_spec, offline_mode
-from prompts import evaluator_messages, role_messages, validate_coding
-from state_protocol import PROTOCOL_ID, build_tasks, default_protocol
-from mechanism import PROTOCOL_ID as MECHANISM_ID, RULE
-from ablation import (PROTOCOL_ID as ABLATION_ID, CODER_VERSION as ABLATION_CODER,
+from .design import CONDITIONS, CODER_VERSION
+from .model_client import call, make_spec, offline_mode
+from .prompts import evaluator_messages, role_messages, validate_coding
+from .state_protocol import PROTOCOL_ID, build_tasks, default_protocol
+from .mechanism import PROTOCOL_ID as MECHANISM_ID, RULE
+from .ablation import (PROTOCOL_ID as ABLATION_ID, CODER_VERSION as ABLATION_CODER,
                       MEMORY_GROUPS, FORMATS, build_ablation_tasks)
-from state_protocol import CORE_STATES
-import channels
+from .state_protocol import CORE_STATES
+from . import channels
 
 MOCK_SOURCE = "MOCK_NOT_LLM"
 LIVE_SOURCE = "LIVE_LLM_API"
@@ -327,7 +327,7 @@ class JobManager:
                         saved = {**saved, "status": "interrupted", "stop_reason": "service_restart",
                                  "notice": "服务重启；旧试次保持原状，不自动重试付费调用。"}
                     return saved
-                from history import batch_report
+                from .history import batch_report
                 report = batch_report(self.store.trials(), job_id)
                 batch = report["batch"]
                 return {"id": job_id, "status": "archived", "total": batch["n"],

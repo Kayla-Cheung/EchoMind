@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from model_client import PROVIDERS, build_request, call, endpoint, extract_final, make_spec, provider_info
-from design import initial_design
-from runner import plan
+from echomind.model_client import PROVIDERS, build_request, call, endpoint, extract_final, make_spec, provider_info
+from echomind.design import initial_design
+from echomind.runner import plan
 
 
 class AdapterTests(unittest.TestCase):

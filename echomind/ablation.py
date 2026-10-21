@@ -5,8 +5,8 @@ No 'anxiety level' is manipulated or inferred. Do not mix with memory-ratio-v1.
 import copy
 from collections import Counter
 
-from mechanism import wilson
-from state_protocol import fingerprint, scenario_hash, validate_protocol, VARIANTS
+from .mechanism import wilson
+from .state_protocol import fingerprint, scenario_hash, validate_protocol, VARIANTS
 
 PROTOCOL_ID = 'memory-ablation-v1'
 MEMORY_GROUPS = ('positive_self', 'negative_self', 'negative_other', 'baseline')

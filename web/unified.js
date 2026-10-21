@@ -5,7 +5,7 @@
   const tabs = Object.fromEntries(names.map(n => [n, document.getElementById('tab-' + n)]));
   const views = Object.fromEntries(names.map(n => [n, document.getElementById('view-' + n)]));
   function show(name, saveHash) {
-    if (!tabs[name]) name = 'history';
+    if (!tabs[name]) name = 'mechanism';
     for (const key of Object.keys(tabs)) {
       const selected = key === name;
       tabs[key].setAttribute('aria-selected', String(selected));
@@ -14,7 +14,7 @@
     }
     if (saveHash && window.location.hash !== '#' + name) window.location.hash = name;
   }
-  show(window.location.hash.slice(1) || (window.location.pathname === '/ablation' ? 'ablation' : 'history'), false);
+  show(window.location.hash.slice(1) || (window.location.pathname === '/ablation' ? 'ablation' : 'mechanism'), false);
   for (const name of Object.keys(tabs)) {
     tabs[name].addEventListener('click', () => show(name, true));
     tabs[name].addEventListener('keydown', event => {

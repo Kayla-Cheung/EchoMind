@@ -20,11 +20,11 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from storage import Store
-from history import batches, batch_report, export, import_records, select_records, parse_import_json
-from runner import JobManager
-from model_client import ProviderError, call, make_spec
-from prompt_registry import BUILTINS, catalog, preview, save_bundle, validate_multiaxis
+from echomind.storage import Store
+from echomind.history import batches, batch_report, export, import_records, select_records, parse_import_json
+from echomind.runner import JobManager
+from echomind.model_client import ProviderError, call, make_spec
+from echomind.prompt_registry import BUILTINS, catalog, preview, save_bundle, validate_multiaxis
 
 
 def record(rid="old", batch="batch", protocol="memory-ratio-v1", source="LIVE_LLM_API", status="complete"):
@@ -122,8 +122,8 @@ class RecoveryTests(StoreFixture, unittest.TestCase):
         # Resolve a project-relative temporary path, then open it from unrelated cwd.
         relative = os.path.relpath(self.path, ROOT)
         self.store.add_trial(record())
-        code = "from storage import Store; import sys,json; s=Store(sys.argv[1]); print(json.dumps([str(s.path),len(s.trials())]))"
-        env = {**os.environ, "PYTHONPATH":str(ROOT), "SOS_OFFLINE":"1"}
+        code = "from echomind.storage import Store; import sys,json; s=Store(sys.argv[1]); print(json.dumps([str(s.path),len(s.trials())]))"
+        env = {**os.environ, "PYTHONPATH":str(ROOT), "ECHOMIND_OFFLINE":"1"}
         result = subprocess.check_output([sys.executable,"-c",code,relative],cwd=self.temp.name,env=env,text=True)
         self.assertEqual(json.loads(result),[str(self.path.resolve()),1])
 
@@ -161,7 +161,7 @@ class CircuitTests(StoreFixture, unittest.TestCase):
     def start_failure(self, kind, concurrency=1):
         jobs=JobManager(self.store)
         request={"mode":"live","repeats":10,"conditions":["baseline"],"concurrency":concurrency}
-        with patch("runner.offline_mode",return_value=False), patch("runner.call",side_effect=ProviderError("synthetic failure",kind)) as transport:
+        with patch("echomind.runner.offline_mode",return_value=False), patch("echomind.runner.call",side_effect=ProviderError("synthetic failure",kind)) as transport:
             first=jobs.start(request)
             result=self.wait_job(jobs,first["id"])
             return result,transport.call_count
@@ -176,9 +176,9 @@ class CircuitTests(StoreFixture, unittest.TestCase):
     def test_rate_limit_stops_after_transport_retries(self):
         spec=make_spec({"provider":"deepseek"})
         def failure(*args):raise urllib.error.HTTPError("https://example.invalid",429,"test",{},io.BytesIO(b'synthetic-secret'))
-        with patch("model_client.time.sleep"),patch("model_client.os.getenv",side_effect=AssertionError("must not read credentials")):
-            # offline_mode reads only SOS_OFFLINE, so separately stub it.
-            with patch("model_client.offline_mode",return_value=True):
+        with patch("echomind.model_client.time.sleep"),patch("echomind.model_client.os.getenv",side_effect=AssertionError("must not read credentials")):
+            # offline_mode reads only ECHOMIND_OFFLINE, so separately stub it.
+            with patch("echomind.model_client.offline_mode",return_value=True):
                 with self.assertRaises(ProviderError) as caught:call(spec,[{"role":"user","content":"x"}],transport=failure)
         self.assertEqual(caught.exception.meta["attempts"],3)
         self.assertNotIn("synthetic-secret",str(caught.exception))
@@ -200,9 +200,9 @@ class CircuitTests(StoreFixture, unittest.TestCase):
         self.assertEqual(self.payloads(),before)
 
     def test_offline_guard_precedes_key_access(self):
-        with patch("runner.offline_mode",return_value=True):
+        with patch("echomind.runner.offline_mode",return_value=True):
             self.assertRaises(ValueError,JobManager(self.store).start,{"mode":"live"})
-        with patch("model_client.offline_mode",return_value=True),patch("model_client.os.getenv",side_effect=AssertionError("credentials read")):
+        with patch("echomind.model_client.offline_mode",return_value=True),patch("echomind.model_client.os.getenv",side_effect=AssertionError("credentials read")):
             self.assertRaises(ProviderError,call,make_spec({"provider":"deepseek"}),[{"role":"user","content":"test"}])
 
 
@@ -212,7 +212,7 @@ class HistoryHTTPTests(StoreFixture, unittest.TestCase):
             sock.bind(('127.0.0.1',0)); self.port=sock.getsockname()[1]
         self.opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self.process=subprocess.Popen([sys.executable,str(ROOT/'server.py'),'--offline','--port',str(self.port)],
-            cwd=self.temp.name,env={**os.environ,'SOS_OFFLINE':'1','SOS_PILOT_DB':str(self.path)},
+            cwd=self.temp.name,env={**os.environ,'ECHOMIND_OFFLINE':'1','ECHOMIND_DB':str(self.path)},
             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         self.addCleanup(self.stop_server)
         for _ in range(80):

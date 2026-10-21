@@ -8,11 +8,11 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from prompts import SCHEMA
+from .prompts import SCHEMA
 
 
 def offline_mode():
-    return os.getenv("SOS_OFFLINE") == "1"
+    return os.getenv("ECHOMIND_OFFLINE") == "1"
 
 
 class ProviderError(RuntimeError):

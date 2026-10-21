@@ -10,14 +10,14 @@ from contextlib import contextmanager, closing
 from datetime import datetime, timezone
 from pathlib import Path
 
-from design import initial_design, validate_design
+from .design import initial_design, validate_design
 
 
 class Store:
     def __init__(self, path):
         # A relative override is relative to this project, never the shell's cwd.
         candidate = Path(path).expanduser()
-        self.path = (candidate if candidate.is_absolute() else Path(__file__).resolve().parent / candidate).resolve()
+        self.path = (candidate if candidate.is_absolute() else Path(__file__).resolve().parents[1] / candidate).resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.lock = threading.RLock()
         with self.connection() as db:
@@ -126,13 +126,13 @@ class Store:
             return db.execute("SELECT COUNT(*) FROM human_ground_truth").fetchone()[0]
 
     def state_protocol(self):
-        from state_protocol import default_protocol
+        from .state_protocol import default_protocol
         with self.lock, self.connection() as db:
             row = db.execute("SELECT value FROM settings WHERE key='state_protocol'").fetchone()
         return json.loads(row[0]) if row else default_protocol(self.design())
 
     def save_state_protocol(self, config):
-        from state_protocol import validate_protocol
+        from .state_protocol import validate_protocol
         validate_protocol(config, self.design())
         with self.lock, self.connection() as db:
             db.execute("INSERT OR REPLACE INTO settings VALUES ('state_protocol',?)", (json.dumps(config, ensure_ascii=False),))
@@ -143,8 +143,8 @@ class Store:
             return [json.loads(row[0]) for row in db.execute("SELECT payload FROM state_human_datasets ORDER BY created_at")]
 
     def import_state_benchmark(self, data):
-        from state_analysis import parse_benchmark
-        from state_protocol import fingerprint
+        from .state_analysis import parse_benchmark
+        from .state_protocol import fingerprint
         record = parse_benchmark(data, self.state_protocol())
         digest = fingerprint(record)
         for previous in self.state_benchmarks():

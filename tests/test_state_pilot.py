@@ -5,12 +5,12 @@ import time
 import unittest
 from pathlib import Path
 
-from design import initial_design, CODER_VERSION
-from prompts import role_messages, evaluator_messages
-from runner import plan, JobManager
-from storage import Store
-from state_protocol import default_protocol, PROTOCOL_ID, CORE_STATES, scenario_hash
-from state_analysis import parse_benchmark, summarize_states
+from echomind.design import initial_design, CODER_VERSION
+from echomind.prompts import role_messages, evaluator_messages
+from echomind.runner import plan, JobManager
+from echomind.storage import Store
+from echomind.state_protocol import default_protocol, PROTOCOL_ID, CORE_STATES, scenario_hash
+from echomind.state_analysis import parse_benchmark, summarize_states
 
 
 def human_payload():

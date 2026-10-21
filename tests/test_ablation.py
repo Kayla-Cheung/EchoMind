@@ -12,12 +12,12 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from ablation import (PROTOCOL_ID, CODER_VERSION, MEMORY_GROUPS, FORMATS,
+from echomind.ablation import (PROTOCOL_ID, CODER_VERSION, MEMORY_GROUPS, FORMATS,
                       summarize_ablation)
-from design import initial_design
-from prompts import role_messages, evaluator_messages
-from runner import plan, execute_task, JobManager
-from storage import Store
+from echomind.design import initial_design
+from echomind.prompts import role_messages, evaluator_messages
+from echomind.runner import plan, execute_task, JobManager
+from echomind.storage import Store
 
 
 def request(n=2):
@@ -103,7 +103,7 @@ class AblationLogic(unittest.TestCase):
             settings=plan(st.design(),{**request(1),'mode':'live'})
             task=next(t for t in settings['tasks'] if t['ablation_format']=='free')
             coding=json.dumps({'interpretation':'unclear','action':'other','coding_confidence':.6,'coding_reason':'没有清晰归因'})
-            with patch('runner.call',side_effect=[('我不知道对方为什么还没回。',{}),(coding,{})]):
+            with patch('echomind.runner.call',side_effect=[('我不知道对方为什么还没回。',{}),(coding,{})]):
                 row=execute_task(st,st.design(),task,settings,'test', __import__('threading').Event())
             self.assertEqual(row['status'],'complete')
             self.assertNotIn('channels',row)
@@ -123,7 +123,7 @@ class AblationHTTP(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp=tempfile.TemporaryDirectory(); sock=socket.socket();sock.bind(('127.0.0.1',0));cls.port=sock.getsockname()[1];sock.close()
-        env=os.environ.copy();env['SOS_PILOT_DB']=str(Path(cls.temp.name)/'temp.sqlite3')
+        env=os.environ.copy();env['ECHOMIND_DB']=str(Path(cls.temp.name)/'temp.sqlite3')
         cls.server=subprocess.Popen([sys.executable,str(ROOT/'server.py'),'--port',str(cls.port)],cwd=ROOT,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         for _ in range(80):
             try:cls.get('/api/ablation/bootstrap');break

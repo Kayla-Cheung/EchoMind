@@ -4,7 +4,7 @@ import io
 import math
 from collections import defaultdict
 
-from state_protocol import PROTOCOL_ID, STATE_LABELS, scenario_hash
+from .state_protocol import PROTOCOL_ID, STATE_LABELS, scenario_hash
 
 INTERPRETATIONS = ("positive", "neutral", "negative", "unclear")
 ACTIONS = ("approach", "wait", "avoid", "other")

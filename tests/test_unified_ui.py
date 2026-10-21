@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class UnifiedUiTests(unittest.TestCase):
     def test_unique_ids_and_script_scoping(self):
-        html = (ROOT / 'web/unified.html').read_text(encoding='utf-8')
+        html = (ROOT / 'web/index.html').read_text(encoding='utf-8')
         ids = re.findall(r'\bid="([^"]+)"', html)
         self.assertEqual(len(ids), len(set(ids)))
         self.assertIn('role="tablist"', html)
@@ -36,7 +36,7 @@ class UnifiedUiTests(unittest.TestCase):
             listener.bind(('127.0.0.1', 0))
             port = listener.getsockname()[1]
             listener.close()
-            env = dict(os.environ, SOS_PILOT_DB=str(Path(directory)/'only-test.sqlite3'))
+            env = dict(os.environ, ECHOMIND_DB=str(Path(directory)/'only-test.sqlite3'))
             process = subprocess.Popen([sys.executable, '-u', 'server.py', '--port', str(port)],
                                       cwd=str(ROOT), env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             try:
@@ -54,7 +54,7 @@ class UnifiedUiTests(unittest.TestCase):
                 root = fetch('/')[1]
                 self.assertEqual(root, fetch('/ablation')[1])
                 self.assertIn(b'id="tab-ablation"', root)
-                for asset in ('unified.js','unified.css','ablation.js','mechanism.js'):
+                for asset in ('unified.js','unified.css','echomind.ablation.js','echomind.mechanism.js'):
                     code, data = fetch('/' + asset)
                     self.assertEqual(code, 200)
                     self.assertGreater(len(data), 300)

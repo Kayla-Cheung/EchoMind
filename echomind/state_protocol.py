@@ -63,7 +63,7 @@ def default_protocol(design):
 
 
 def validate_protocol(config, design):
-    from prompts import role_messages
+    from .prompts import role_messages
     if not isinstance(config, dict) or config.get("protocol") != PROTOCOL_ID:
         raise ValueError("状态实验配置无效")
     profiles, scenarios = config.get("profiles"), config.get("scenarios")

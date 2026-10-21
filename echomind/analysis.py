@@ -1,7 +1,7 @@
 """Exploratory summaries. MOCK and live records are never pooled."""
 from collections import defaultdict
 
-from design import CONDITIONS
+from .design import CONDITIONS
 
 
 def summarize(records, source="LIVE_LLM_API", filters=None):

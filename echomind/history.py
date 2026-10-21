@@ -93,10 +93,10 @@ def batch_report(records, batch_id):
     # Frozen legacy report logic, only when the WHOLE batch has one known protocol.
     try:
         if protocols == {"memory-ratio-v1"}:
-            from mechanism import summarize_mechanism
+            from .mechanism import summarize_mechanism
             original = summarize_mechanism(rows, batch_id)
         elif protocols == {"memory-ablation-v1"}:
-            from ablation import summarize_ablation
+            from .ablation import summarize_ablation
             original = summarize_ablation(rows, batch_id)
         if original:
             original = {k: v for k, v in original.items() if k != "records"}
@@ -108,7 +108,7 @@ def batch_report(records, batch_id):
 
 
 def export(records):
-    return {"schema": "sos-history-v1", "exported_at": datetime.now(timezone.utc).isoformat(),
+    return {"schema": "echomind-history-v1", "exported_at": datetime.now(timezone.utc).isoformat(),
             "records_sha256": digest(records), "records": records,
             "notice": "原始记录逐字段保留；缺失字段不补造。MOCK 和失败记录不是有效模型证据。"}
 

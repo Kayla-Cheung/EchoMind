@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 PROMPT_VERSION = "role-v1.0"
 CODER_VERSION = "blind-coder-v1.1"
 CONDITIONS = {

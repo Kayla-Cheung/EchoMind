@@ -14,12 +14,12 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from analysis import summarize
-from design import initial_design
-from prompts import evaluator_messages, role_messages, validate_coding
-from runner import JobManager, plan
-from model_client import PROVIDERS
-from storage import Store
+from echomind.analysis import summarize
+from echomind.design import initial_design
+from echomind.prompts import evaluator_messages, role_messages, validate_coding
+from echomind.runner import JobManager, plan
+from echomind.model_client import PROVIDERS
+from echomind.storage import Store
 
 
 class LogicTests(unittest.TestCase):
@@ -27,12 +27,12 @@ class LogicTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             store = Store(Path(temp_dir) / 'batch.sqlite3')
             manager = JobManager(store)
-            from runner import mock_output
+            from echomind.runner import mock_output
             def one_failure(task):
                 if task['condition'] == 'baseline':
                     raise RuntimeError('simulated trial failure')
                 return mock_output(task)
-            with patch('runner.mock_output', side_effect=one_failure):
+            with patch('echomind.runner.mock_output', side_effect=one_failure):
                 job = manager.start({'mode': 'mock', 'conditions': ['baseline', 'positive_social'],
                                      'scenario_ids': [store.design()['scenarios'][0]['id']]})
                 for _ in range(100):
@@ -84,7 +84,7 @@ class HttpTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         sock = socket.socket(); sock.bind(('127.0.0.1', 0)); cls.port = sock.getsockname()[1]; sock.close()
-        env = os.environ.copy(); env['SOS_PILOT_DB'] = str(Path(cls.tmp.name) / 'test.sqlite3')
+        env = os.environ.copy(); env['ECHOMIND_DB'] = str(Path(cls.tmp.name) / 'test.sqlite3')
         cls.proc = subprocess.Popen([sys.executable, str(ROOT / 'server.py'), '--port', str(cls.port)],
                                     cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(80):
@@ -145,8 +145,8 @@ class HttpTests(unittest.TestCase):
         self.assertTrue(all(r['source'] == 'MOCK_NOT_LLM' for r in exported))
         self.assertEqual(len(json.loads(self.get('/api/export.json'))['records']), 10)
         self.assertGreater(len(self.get('/')), 1000)
-        self.assertGreater(len(self.get('/app.js')), 1000)
-        self.assertGreater(len(self.get('/style.css')), 1000)
+        self.assertGreater(len(self.get('/unified.js')), 1000)
+        self.assertGreater(len(self.get('/unified.css')), 1000)
         reviewed = self.post('/api/trials/' + rows[0]['id'] + '/review', {'coding': {'interpretation':'unclear',
             'action':'other','coding_confidence':1,'coding_reason':'人工复核'}, 'note':'测试'})
         self.assertEqual(reviewed['human_review']['coding']['interpretation'], 'unclear')
@@ -206,9 +206,9 @@ class HttpTests(unittest.TestCase):
         exported = list(csv.DictReader(io.StringIO(self.get('/api/state/export.csv').decode('utf-8-sig'))))
         self.assertEqual({r['target_state'] for r in exported}, {'none', 'mild', 'moderate'})
         self.assertEqual(len(self.get('/api/state/human-template.csv').decode('utf-8-sig').splitlines()), 1)
-        self.assertGreater(len(self.get('/study.js')), 1000)
-        self.assertGreater(len(self.get('/study.css')), 1000)
-        self.assertGreater(len(self.get('/workbench')), 1000)
+        self.assertGreater(len(self.get('/mechanism.js')), 1000)
+        self.assertGreater(len(self.get('/mechanism.css')), 1000)
+        self.assertGreater(len(self.get('/ablation')), 1000)
 
 
 if __name__ == '__main__': unittest.main()

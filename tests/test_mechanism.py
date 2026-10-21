@@ -7,13 +7,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from channels import parse_channels, FORMAT_VERSION, CODER_VERSION
-from design import initial_design
-from mechanism import PROTOCOL_ID, RULE, fisher_exact, wilson, summarize_mechanism
-from prompts import role_messages, evaluator_messages
-from runner import plan, JobManager, execute_task
-from state_protocol import CORE_STATES
-from storage import Store
+from echomind.channels import parse_channels, FORMAT_VERSION, CODER_VERSION
+from echomind.design import initial_design
+from echomind.mechanism import PROTOCOL_ID, RULE, fisher_exact, wilson, summarize_mechanism
+from echomind.prompts import role_messages, evaluator_messages
+from echomind.runner import plan, JobManager, execute_task
+from echomind.state_protocol import CORE_STATES
+from echomind.storage import Store
 
 
 def request(repeats=20, mode="mock"):
@@ -152,11 +152,11 @@ class MechanismTests(unittest.TestCase):
             settings = plan(store.design(), request(1, "live"))
             code = json.dumps({"interpretation": "neutral", "action": "avoid",
                                "coding_confidence": .8, "coding_reason": "fixture"})
-            with patch("runner.call", side_effect=[("内心想法：我不确定。", {}), (code, {})]):
+            with patch("echomind.runner.call", side_effect=[("内心想法：我不确定。", {}), (code, {})]):
                 result = execute_task(store, store.design(), settings["tasks"][0], settings, "fixture", threading.Event())
             self.assertEqual(result["status"], "complete")
             self.assertEqual(result["machine_coding"]["action"], "other")
-            with patch("runner.call", return_value=("一段没有通道的回答", {})) as call:
+            with patch("echomind.runner.call", return_value=("一段没有通道的回答", {})) as call:
                 failed = execute_task(store, store.design(), settings["tasks"][1], settings, "fixture", threading.Event())
             self.assertEqual(call.call_count, 1)
             self.assertEqual(failed["status"], "error")
