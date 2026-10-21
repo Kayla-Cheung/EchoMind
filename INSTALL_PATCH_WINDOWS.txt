@@ -1,0 +1,28 @@
+SOS Demo 消融实验升级方法（Windows 11）
+=================================
+目标原项目目录：C:\Users\Kayla\Desktop\SOS\experiments\context_memory_pilot
+
+0. 请先在原来的 PowerShell/CMD 窗口按 Ctrl+C 停止正在运行的 8768 服务。
+   若服务不是在当前窗口启动，请先核对监听 8768 的 python server.py 进程，再结束该进程。
+1. 在 PowerShell 中执行：
+   $target = "$HOME\Desktop\SOS\experiments\context_memory_pilot"
+   Copy-Item "$target\data\pilot.sqlite3" "$target\data\pilot-before-ablation.sqlite3" -ErrorAction SilentlyContinue
+2. 将 SOS_demo_patch.zip 保存至 Downloads 文件夹，在 PowerShell 中执行：
+   Expand-Archive "$HOME\Downloads\SOS_demo_patch.zip" -DestinationPath $target -Force
+   这是原目录上覆盖源码，不需要删除任何文件夹，也不覆盖 .env 或 data 目录。
+3. 在 PowerShell 中执行：
+   Set-Location $target
+   python -m unittest discover -s tests -v
+   python server.py --port 8768
+4. 浏览器打开：
+   http://127.0.0.1:8768/ablation
+   原有首页：http://127.0.0.1:8768/
+5. 先 MOCK、每格 3 次检查流程（24 条模拟回答）。确认无误后才选择真实 API。
+   每格 20 次 = 160 次角色调用 + 160 次编码调用（重试另计，可能产生费用）。
+
+安全与兼容：
+- 本次 ZIP 无真实实验 SQLite 数据、无浏览器资料、无 .env/API Key。
+- 原项目的 data/pilot.sqlite3 留在本地，与新旧协议数据共享数据库但分别标记和统计。
+- 升级必须真正重启 Python 服务；旧启动脚本检测到端口已运行时，只会打开旧网页，不会自动热加载。
+- 如果你的 ZIP 被放到别的文件夹，请将上面的 Downloads 路径换成实际文件路径。
+- 真实 API 未在本次沙箱中测试；已完成离线单元与本机 HTTP/MOCK 测试。

@@ -1,0 +1,17 @@
+/* Unified workbench navigation; experiment CSS and endpoints remain independent. */
+.workspace-intro{padding:0 0 5px}
+.workspace-intro h1{font-size:29px}
+.workspace-intro .lead{margin-bottom:18px;max-width:800px}
+.experiment-tabs{display:flex;gap:8px;border-bottom:1px solid #dce5dd;margin-top:4px;margin-bottom:14px}
+.experiment-tabs button{border:1px solid #dce5dd;border-bottom:none;background:#f4f7f3;color:#526d5d;border-radius:10px 10px 0 0;padding:14px 24px;min-width:230px;font-weight:700;font-size:13px;text-align:left}
+.experiment-tabs button span{display:block;font-weight:400;color:#839287;font-size:10px;margin-top:3px}
+.experiment-tabs button[aria-selected="true"]{background:#fff;color:#285c46;border-color:#9dbdae;box-shadow:inset 0 3px 0 #427e5f}
+.experiment-tabs button:focus-visible{outline:2px solid #427e5f;outline-offset:2px}
+.protocol-note{font-size:11px;color:#75867b;line-height:1.8;margin-bottom:6px}
+.pane-utility{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:11px;color:#798d7f;margin-bottom:9px}
+.pane-utility a{font-size:11px;color:#477266;text-decoration:none}
+#view-mechanism>.intro,#view-ablation>.intro{padding:12px 0 0}
+#view-mechanism h1,#view-ablation h1{font-size:28px}
+#workspace-connection{font-size:10px;color:#769486}
+#abl-toast{position:fixed;bottom:22px;right:22px;max-width:480px;background:#304c3b;color:white;padding:14px 20px;border-radius:8px;font-size:12px;z-index:20}
+@media(max-width:680px){.experiment-tabs{gap:4px}.experiment-tabs button{min-width:0;flex:1;padding:12px 10px;font-size:11px}.experiment-tabs button span{font-size:9px}.workspace-intro h1{font-size:25px}}

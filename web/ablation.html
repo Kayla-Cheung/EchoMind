@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOS · 记忆归属 × 输出格式</title><link rel="stylesheet" href="/mechanism.css"><link rel="stylesheet" href="/ablation.css"><script defer src="/ablation.js"></script></head>
+<body><header><a href="/" class="brand">SOS<span>消融实验</span></a><nav><a href="/">旧机制 Demo ↗</a><a href="/study">研究设置 ↗</a><a href="/ablation-protocol.md" target="_blank">实验说明 ↗</a></nav><span id="connection">连接中</span></header>
+<main>
+<section class="intro"><p class="eyebrow">MEMORY SOURCE × RESPONSE FORMAT</p><h1>区别来自记忆，还是提示词？</h1><p class="lead">独立的 4 × 2 对照：四种经历来源 × 两种输出格式。旧批次、原有判定规则和原有结果不变。</p>
+<div class="claim"><span>研究边界</span><p>只对单题的模型输出做描述性对比，不证明模型进入焦虑状态。MOCK 仅用于功能检查；自由叙述与三通道需要同一编码标准的人工盲复核。</p></div></section>
+<section class="panel"><div class="section-head"><h2><span>01</span>设置对照</h2><small>8 个实验格子，每格独立重复采样</small></div>
+<fieldset id="configuration"><div class="inputs"><label class="wide">情境<select id="scenario"></select></label><label>模型来源<select id="provider"></select></label><label>每格重复<input id="repeats" type="number" min="1" max="100" value="3"></label><label>运行方式<select id="mode"><option value="mock">MOCK · 无费用</option><option value="live">真实 API · 可能收费</option></select></label></div>
+<blockquote id="situation"></blockquote>
+<div class="ablation-grid" id="materials"></div>
+<div class="inputs advanced"><label>材料版<select id="variant"><option>A</option><option>B</option><option>C</option></select></label><label>角色模型 ID<input id="model"></label><label>固定编码器<select id="evaluator"></select></label><label>编码器模型 ID<input id="evaluatorModel"></label><label>角色 MiniMax 区域<select id="region"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label><label>编码器 MiniMax 区域<select id="evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label></div>
+<details><summary>检查实际发送给角色的 Prompt</summary><div class="inputs two"><label>记忆条件<select id="previewCondition"></select></label><label>输出格式<select id="previewFormat"><option value="channels">三通道</option><option value="free">自由叙述</option></select></label></div><pre id="prompt"></pre></details>
+</fieldset><div class="runbar"><button id="run" class="primary" disabled>运行对照</button><button id="cancel" hidden>停止后续调用</button><span id="progress" role="status"></span></div><p class="hint" id="estimate"></p></section>
+<section class="panel"><div class="section-head"><h2><span>02</span>结果与对照</h2><div class="links"><a id="csv" hidden>CSV</a><a id="json" hidden>完整 JSON</a></div></div>
+<label class="batch-label">查看批次<select id="batch"><option value="">尚无记录</option></select></label><p id="batchContext" class="hint"></p>
+<div class="verdict" id="status"><b>尚未运行</b><p>先运行 MOCK 确认流程，随后可选择真实 API 生成新数据。</p></div>
+<div class="scroll" id="table"></div><div id="contrasts"></div><p class="hint">表格中所有分母均为成功完成编码的试次，失败单列。负面解释定义更严格：单纯“又是已读不回”、难过、犹豫不应自动算作负面归因。旧编码结果不会自动重写。</p>
+<details><summary>逐次原文、编码依据及完整上下文</summary><div class="scroll" id="records"></div></details></section>
+<footer>新协议 memory-ablation-v1。因输出格式不同，仍可能存在评分不等价的问题；该页不自动宣称机制已确定。</footer></main><div id="toast" role="alert" hidden></div></body></html>

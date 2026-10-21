@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SOS · 同一问题，不同经历</title>
+  <link rel="stylesheet" href="/mechanism.css"><script src="/mechanism.js" defer></script>
+</head>
+<body>
+<header><a href="/" class="brand">SOS<span>机制 Demo</span></a><nav><a href="/ablation">提示词消融实验 ↗</a><a href="/study">完整研究设置 ↗</a><a href="/mechanism-protocol.md" target="_blank">判定规则 ↗</a></nav><span id="connection">连接中</span></header>
+<main>
+  <section class="intro"><p class="eyebrow">MEMORY → RESPONSE</p><h1>同一问题，不同经历。</h1><p class="lead">重复提问，观察回答的比例如何变化。</p>
+    <div class="claim"><span>本次 Claim</span><p id="claim">固定人物、模型和同一问题，仅改变经历条件，会改变回答中的解释或行动比例。</p></div>
+  </section>
+  <section class="panel" aria-labelledby="setupTitle">
+    <div class="section-head"><h2 id="setupTitle"><span>01</span> 固定问题，重复回答</h2><small id="identity"></small></div>
+    <fieldset id="configuration">
+      <div class="inputs">
+        <label class="wide">问题<select id="scenario"></select></label>
+        <label>角色模型<select id="provider"></select></label>
+        <label>每组回答次数<input id="repeats" type="number" min="1" max="100" value="20"></label>
+        <label>运行方式<select id="mode"><option value="mock">MOCK · 体验流程</option><option value="live">真实模型 · 检验 Claim</option></select></label>
+      </div>
+      <blockquote id="situation"></blockquote>
+      <div id="stateCards" class="three"></div>
+      <details class="settings"><summary>模型参数与实际提示</summary>
+        <div class="inputs advanced">
+          <label>角色模型 ID<input id="model"></label><label>固定编码器<select id="evaluator"></select></label>
+          <label>编码器模型 ID<input id="evaluatorModel"></label>
+          <label>材料版<select id="variant"><option>A</option><option>B</option><option>C</option></select></label>
+          <label>角色 MiniMax 区域<select id="region"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+          <label>编码器 MiniMax 区域<select id="evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+        </div>
+        <p class="hint">同组每次使用完全相同的提示和独立上下文，三组顺序随机交错。DeepSeek Flash 固定为非推理模式：角色温度 1，编码温度 0；其他模型使用供应商默认值。编码器只看问题和回答。</p>
+        <label>查看一个条件的实际 Prompt<select id="previewCondition"></select></label><pre id="prompt"></pre>
+      </details>
+    </fieldset>
+    <div class="runbar"><button id="run" class="primary" disabled>运行三组 × 20 次</button><button id="cancel" hidden>停止后续调用</button><span id="progress" role="status" aria-live="polite"></span></div>
+    <p id="estimate" class="hint"></p>
+  </section>
+  <section class="panel" id="results" aria-labelledby="resultTitle">
+    <div class="section-head"><h2 id="resultTitle"><span>02</span> 用比例判断</h2><div class="links"><a id="csv" hidden>导出 CSV</a><a id="json" hidden>证据与原文 JSON</a></div></div>
+    <label class="batch-label">查看批次<select id="batch"><option value="">尚无记录</option></select></label>
+    <p id="batchContext" class="hint"></p>
+    <div id="verdict" class="verdict empty" role="status"><b>等待第一组结果</b><p>先体验流程，再切换真实模型检验。每个批次独立呈现。</p></div>
+    <div id="rates" class="three"></div>
+    <p id="denominator" class="hint" hidden>分母 = 完成三通道解析与编码的回答，包括无法判断及其他。缺失行为记为“其他”，不记为回避。</p>
+    <details id="statistics" hidden><summary>差异有多大？查看预设检验与完整记录</summary>
+      <p class="hint">预先只比较“不利 − 平稳”的负面解释率、回避率。双侧 Fisher 精确检验，两个指标用 Bonferroni 校正；校正后 p &lt; 0.05 才报告本批次支持。混合组用于描述，不要求线性梯度。</p>
+      <div id="comparison"></div>
+      <p class="hint">比例附 95% Wilson 区间。每组至少 20 次且整批完成才判断；这不是功效保证。检验假定固定设置下采样独立，仅校正本批次的两个指标，跨批次反复试到成功会增加误报。</p>
+      <div id="allRecords" class="scroll"></div>
+    </details>
+  </section>
+  <section class="panel human-reference" id="humanReference" aria-labelledby="humanReferenceTitle">
+    <div class="section-head"><h2 id="humanReferenceTitle"><span>03</span> 人类研究参考</h2><span class="reference-tag">论文汇总 · 仅供参考</span></div>
+    <p class="reference-intro">人类研究使用不同的题目、分组和计分方式。以下数值帮助理解背景，不参与本批次 Claim 判定，也不能换算成人类相似度。</p>
+    <!-- Selected published aggregates from demo_results/human_reference_summary.csv; reviewed 2026-10-21. -->
+    <div class="three">
+      <article class="reference-card">
+        <p class="reference-study">Beard &amp; Amir · 2009</p>
+        <h3>威胁解释认可率</h3>
+        <p class="reference-sample">52 名学生 · 两组各 26 人</p>
+        <div class="reference-rate"><span>非焦虑对照组</span><strong>30%</strong><div class="reference-track" aria-hidden="true"><span style="width:30%"></span></div></div>
+        <div class="reference-rate"><span>高社交焦虑组</span><strong>59%</strong><div class="reference-track" aria-hidden="true"><span style="width:59%"></span></div></div>
+        <p class="reference-note">多道社交情境中，认可预设威胁解释的个人百分比，再取组均值；不同于 Demo 单题自由回答的比例。</p>
+        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2792932/#T2" target="_blank" rel="noopener noreferrer">原文 · Table 2 ↗</a>
+      </article>
+      <article class="reference-card">
+        <p class="reference-study">Miers 等 · 2020</p>
+        <h3>解释与回避的关联</h3>
+        <p class="reference-sample">324 人 · 18–25 岁</p>
+        <div class="reference-stat"><strong>r = 0.27</strong><span>正相关 · p &lt; 0.001</span></div>
+        <p class="reference-description">线上负面解释越多，自报的线上回避倾向也越高。</p>
+        <p class="reference-note">这里是相关系数，不是回避人数比例；相关本身不说明因果。</p>
+        <a href="https://link.springer.com/article/10.1007/s10608-020-10097-1" target="_blank" rel="noopener noreferrer">原文 · Table 1 ↗</a>
+      </article>
+      <article class="reference-card">
+        <p class="reference-study">Goldman 等 · 2025</p>
+        <h3>消息情境中的解释</h3>
+        <p class="reference-sample">60 人 · 高、低社交焦虑组各 30 人</p>
+        <p class="reference-finding">未检出明确组间差异 <span>p = 0.42</span></p>
+        <dl class="reference-scores"><div><dt>低社交焦虑组</dt><dd>−28.20</dd></div><div><dt>高社交焦虑组</dt><dd>−32.60</dd></div></dl>
+        <p class="reference-note">WhatsApp 约会对话的解释均分，量尺 −50 至 +50；越低表示认为对方越不愿继续约会。它不是百分比。</p>
+        <a href="https://link.springer.com/article/10.1007/s11031-025-10136-y" target="_blank" rel="noopener noreferrer">原文 · 解释结果 ↗</a>
+      </article>
+    </div>
+  </section>
+  <section class="panel" aria-labelledby="responseTitle">
+    <div class="section-head"><h2 id="responseTitle"><span>04</span> 回到每一次回答</h2><label class="sample-label">查看次数<select id="sample"><option value="1">第 1 次</option></select></label></div>
+    <p class="hint">内心想法是角色公开表达的简短独白。说话、行为可省略；此处行为指文字中的行动意向。</p>
+    <div id="responses" class="three"><div class="empty wide">运行后在这里逐次查看三个通道及编码依据。</div></div>
+  </section>
+  <footer>本 Demo 检验经历条件对模型回答的影响。对真实人类的解释与行为是否有效，需要后续独立验证。</footer>
+</main><div id="toast" role="alert" hidden></div>
+</body></html>

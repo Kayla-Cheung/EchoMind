@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOS · Context Memory Demo</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/multi.css">
+  <link rel="stylesheet" href="/demo.css">
+  <script src="/app.js" defer></script>
+  <script src="/multi.js" defer></script>
+</head>
+<body>
+<header>
+  <div class="brand">SOS <span>/ Context Memory Demo</span></div>
+  <nav aria-label="主导航">
+    <button data-page="experiment" class="active">开始实验</button>
+    <button data-page="results">查看结果</button>
+    <button data-page="design">研究设置</button>
+  </nav>
+  <div id="apiStatus" class="api-status"></div>
+</header>
+<main>
+  <section id="experiment" class="page active">
+    <div class="heading demo-heading">
+      <div><p class="eyebrow">MECHANISM PILOT · DEMO</p><h1>同一个人，换一段经历</h1>
+        <p>选模型、选记忆、选情境，观察角色如何理解和行动。MOCK 只用于体验流程。</p></div>
+      <span class="badge">研究者合成记忆</span>
+    </div>
+    <div class="demo-layout">
+      <div class="demo-controls">
+        <section class="card demo-step">
+          <div class="step-head"><span class="step-number">1</span><div><h2>选择角色模型</h2><p>可勾选一家或多家；每家模型 ID 可在卡片内修改。</p></div></div>
+          <div id="providerRows" class="provider-grid"></div>
+          <div id="providerStatus" class="hint"></div>
+        </section>
+        <section class="card demo-step">
+          <div class="step-head"><span class="step-number">2</span><div><h2>选择记忆与情境</h2><p>所有模型使用相同的人物、记忆材料和情境。</p></div></div>
+          <div class="demo-field"><label for="conditionSelect">记忆条件</label><select id="conditionSelect"></select></div>
+          <div id="memoryLibrary" class="memory-list"></div>
+          <div class="demo-field"><label for="scenarioSelect">测试情境</label><select id="scenarioSelect"></select></div>
+          <div id="scenarioText" class="scenario"></div>
+          <div class="identity-line">固定人物：<span id="identityCard"></span></div>
+        </section>
+        <section class="card demo-step">
+          <div class="step-head"><span class="step-number">3</span><div><h2>运行并对比</h2><p>同一情境下对比五种记忆条件。</p></div></div>
+          <div class="demo-run-options">
+            <label>运行模式<select id="modeSelect"><option value="mock">MOCK 演示</option><option value="live">真实 API</option></select></label>
+            <label>每组重复次数<input id="repeats" type="number" min="1" max="20" value="1"></label>
+            <label>统一编码器<select id="evaluatorProvider"></select></label>
+          </div>
+          <div class="actions demo-actions">
+            <button id="runCompare" class="primary">对比五种记忆</button>
+            <button id="runOne">只运行当前条件</button>
+            <button id="runBatch">批量运行全部情境</button>
+            <button id="cancelJob" class="danger" hidden>取消任务</button>
+          </div>
+          <div id="estimate" class="hint"></div>
+          <div id="progress" class="progress" role="status"></div>
+          <details class="demo-advanced"><summary>高级设置与 Prompt 检查</summary>
+            <div class="advanced-grid">
+              <label>编码器模型 ID<input id="evaluatorModel"></label>
+              <label>MiniMax 编码器区域<select id="evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+              <label>最大角色调用量<input id="maxCalls" type="number" min="1" max="1000" value="500"></label>
+              <label>并发限制<select id="concurrency"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+            </div>
+            <label for="systemPrompt">角色 System Prompt</label><textarea id="systemPrompt" rows="6"></textarea>
+            <button id="savePrompt">保存角色提示词</button>
+            <button id="goMemory">编辑记忆与情境库</button>
+            <input id="modelInput" value="gpt-6-luna" hidden readonly>
+            <details id="inspector"><summary>Prompt Inspector · 查看实际角色上下文</summary><pre id="promptText"></pre><small id="promptHash"></small></details>
+          </details>
+        </section>
+      </div>
+      <aside class="card demo-output">
+        <h2>最近一次回答</h2><div id="resultSource" class="source">尚未运行</div>
+        <h3>角色第一人称回答</h3><div id="rawAnswer" class="answer">选择模型后点击“对比五种记忆”。</div>
+        <h3>独立编码</h3><div id="coding" class="coding">—</div>
+        <details><summary>试次参数与 Baseline</summary><div id="runParams" class="smalltext"></div><div id="baselineCompare" class="smalltext"></div></details>
+        <button type="button" class="subtle" onclick="page('results')">查看全部模型与条件结果 →</button>
+      </aside>
+    </div>
+  </section>
+
+  <section id="results" class="page">
+    <div class="heading"><div><p class="eyebrow">EXPLORATORY RESULTS</p><h1>实验结果</h1><p>模型重复调用不是独立人类参与者；MOCK 与真实 API 分开统计。</p></div>
+      <div><a class="buttonlink" href="/api/export.csv">导出 CSV</a><a class="buttonlink" href="/api/export.json">导出 JSON</a></div></div>
+    <div class="card"><div class="filters">
+      <label>数据来源<select id="sourceFilter"><option value="LIVE_LLM_API">真实 API</option><option value="MOCK_NOT_LLM">MOCK 演示</option></select></label>
+      <label>人物<select id="profileFilter"></select></label><label>模型<select id="modelFilter"></select></label>
+      <label>情境<select id="scenarioFilter"></select></label><label>条件<select id="conditionFilter"></select></label>
+      <label>批次<select id="batchFilter"></select></label><label>编码器<select id="evaluatorFilter"></select></label>
+      <label>编码 Prompt 版本<select id="coderVersionFilter"></select></label>
+    </div><div id="mockBanner" class="mock-banner" hidden>MOCK 演示数据 · 不与真实 API 合并，不构成研究证据</div><div id="summaryNote" class="hint"></div></div>
+    <div class="card"><h2>模型 × 记忆条件</h2><div id="modelComparison" class="tablewrap"></div><h3>同一情境的原始回答</h3><div id="modelRawCompare"></div></div>
+    <div class="chartgrid"><div class="card"><h2>负面解释比例</h2><div id="negativeChart"></div></div><div class="card"><h2>回避选择比例</h2><div id="avoidChart"></div></div></div>
+    <details class="card"><summary>更多探索性分析</summary><div class="chartgrid"><div><h3>与 Baseline 的差异</h3><div id="deltaView"></div></div><div><h3>社交 / 非社交情境</h3><div id="kindView"></div></div></div><h3>情境差异与重复稳定性</h3><div id="scenarioView" class="smalltext"></div><div id="stabilityView" class="smalltext"></div></details>
+    <details class="card"><summary>逐条件对比</summary><div id="conditionCompare"></div></details>
+    <details class="card"><summary>逐次记录与人工复核</summary><div class="tablewrap"><table><thead><tr><th>时间</th><th>来源</th><th>模型</th><th>情境</th><th>条件</th><th>重复</th><th>解释</th><th>行动</th><th>原文 / 复核</th></tr></thead><tbody id="trialRows"></tbody></table></div></details>
+  </section>
+
+  <section id="design" class="page">
+    <div class="heading"><div><p class="eyebrow">RESEARCH DESIGN</p><h1>研究设置</h1><p>修改材料后保存；历史试次保留当时的配置快照。</p></div>
+      <div><button id="saveDesign" class="primary">保存研究设置</button><button id="exportDesign">导出配置</button><button id="importDesign">导入配置</button><input id="designFile" type="file" accept=".json,application/json" hidden></div></div>
+    <div class="chartgrid"><div class="card"><h2>Research Claim</h2><textarea id="claim" rows="4"></textarea><label>H1</label><textarea id="h1" rows="2"></textarea><label>H2</label><textarea id="h2" rows="2"></textarea><label>H3</label><textarea id="h3" rows="2"></textarea></div>
+      <div class="card"><h2>变量与编码</h2><label>独立变量</label><textarea id="iv" rows="3"></textarea><label>因变量</label><textarea id="dv" rows="3"></textarea><div id="conditionRules" class="smalltext"></div><h3>编码规则</h3><textarea id="codingRules" rows="6"></textarea></div></div>
+    <div class="card"><h2>记忆库 <small>研究者合成</small></h2><div id="memoryEditor"></div><button id="addMemory">添加记忆</button></div>
+    <div class="card"><h2>情境库</h2><div id="scenarioEditor"></div><button id="addScenario">添加情境</button></div>
+    <div class="card"><h2>Human Ground Truth · 预留</h2><p class="hint">CSV 列：participant_id, anxiety_score, scenario_id, interpretation, action。焦虑分数不会传给 Agent。</p><input id="humanFile" type="file" accept=".csv,text/csv"><button id="importHuman">导入人类 CSV</button><span id="humanCount"></span></div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+</body>
+</html>

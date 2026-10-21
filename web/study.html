@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOS · Anxiety Simulation Pilot</title><link rel="stylesheet" href="/study.css"><script src="/study.js" defer></script></head>
+<body><header><a class="brand" href="/">SOS <span>Behavioral Simulation</span></a><nav><a href="#design">实验思路</a><a href="#human">人类参照</a><a href="/workbench">记忆工作台 ↗</a></nav><span id="connection">连接中</span></header>
+<main>
+  <div class="hero"><p class="eyebrow">ANXIETY STATE PILOT / DEMO</p><h1>同一个人，不同状态下如何回应？</h1><p>用不同经历尝试诱导三档反应，再观察同一情境中的解释与行动。</p><div class="notice">“无 / 轻度 / 中度”是诱导目标，尚未对应真实人类的临床程度。先检验上下文效应，再检验人类可比性。</div></div>
+  <section class="panel setup">
+    <div class="section-title"><h2>1. 选择模型与情境</h2><span id="identity"></span></div>
+    <div class="inputs"><label>角色模型<select id="provider"></select></label><label class="wide">情境<select id="scenario"></select></label><label>运行方式<select id="mode"><option value="mock">MOCK 体验流程</option><option value="live">真实 API</option></select></label></div>
+    <div id="situation" class="situation"></div>
+    <details><summary>模型、编码器与运行设置</summary><div class="inputs advanced">
+      <label>角色模型 ID<input id="model"></label><label>MiniMax 角色区域<select id="region"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+      <label>固定编码器<select id="evaluator"></select></label><label>编码器模型 ID<input id="evaluatorModel"></label>
+      <label>MiniMax 编码器区域<select id="evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+      <label>每组重复次数<input id="repeats" type="number" min="1" max="20" value="1"></label>
+      <label>材料版本<select id="variant"><option>A</option><option>B</option><option>C</option><option value="all">A + B + C</option></select></label>
+      <label>情境范围<select id="scope"><option value="one">当前情境</option><option value="development">开发集</option><option value="evaluation">预留评估集</option><option value="all">全部情境（探索）</option></select></label>
+      <label>最大角色调用量<input id="maxCalls" type="number" min="1" max="1000" value="100"></label><label>并发<select id="concurrency"><option>1</option><option>2</option><option>3</option></select></label>
+    </div><label class="check"><input id="controls" type="checkbox">加入无记忆与负面非社交经历对照</label><p class="muted">各模型采用自身默认生成参数；不能视为统一温度。每次独立会话，编码器只读取情境和原始回答。需要精细参数控制可使用原工作台。</p></details>
+  </section>
+  <section><div class="section-title"><h2>2. 三档诱导条件</h2><span>合成经历 · 不向角色透露状态标签</span></div><div id="stateCards" class="three"></div></section>
+  <div class="runbar"><div><button id="run" class="primary">运行三档对比</button><button id="cancel" hidden>取消剩余任务</button><span id="progress" role="status"></span></div><p id="estimate" class="muted"></p></div>
+  <details class="panel"><summary>查看实际 Prompt / 编辑诱导材料</summary><div class="inputs"><label>预览条件<select id="previewCondition"></select></label><label>材料版本<select id="editVariant"><option>A</option><option>B</option><option>C</option></select></label></div><div id="memoryEditors"></div><button id="saveMaterials">保存材料</button><p class="muted">每个条件每版三行经历；请只描述事件。修改后产生新的配置哈希，历史试次快照保留。</p><pre id="prompt"></pre></details>
+
+  <section id="results" class="panel"><div class="section-title"><h2>3. 解释与行动</h2><div class="links"><a href="/api/state/export.csv">CSV</a><a href="/api/state/export.json">JSON + 快照</a></div></div>
+    <div class="inputs"><label>结果来源<select id="source"><option value="MOCK_NOT_LLM">MOCK 演示</option><option value="LIVE_LLM_API">真实 API</option></select></label><label>批次<select id="batch"><option value="">全部</option></select></label><label>情境筛选<select id="resultScene"><option value="">全部</option></select></label><label>模型筛选<select id="resultModel"><option value="">全部</option></select></label></div>
+    <div id="resultNotice" class="notice"></div><div id="rates"></div><div id="responses" class="three"></div>
+  </section>
+  <section id="human" class="panel"><div class="section-title"><h2>4. 与人类参照比较</h2><span id="humanStatus">暂无人类数据</span></div>
+    <p>文献用于提出预期；真实拟合需要相同任务、可比测量和独立的人类数据。Demo 不内置虚构的人类结果。</p>
+    <label>人类数据集<select id="benchmark"><option value="">尚未选择</option></select></label><div id="humanResults" class="empty">外部有效性：未检验</div>
+    <details><summary>导入人类数据（已有数据时使用）</summary><p class="muted">先按原研究或预注册规则确定分组。CSV 中 anxiety_group 使用 none / mild / moderate；系统不从分数自动推断诊断。</p>
+      <div class="inputs advanced"><label>数据集名称<input id="humanName"></label><label>论文 / 数据来源<input id="humanReference"></label><label>焦虑测量工具与版本<input id="humanInstrument"></label><label>分组依据 / 阈值来源<input id="humanRule"></label><label>编码版本<input id="humanCoder" value="blind-coder-v1.1"></label><label>CSV 文件<input id="humanCsv" type="file" accept=".csv"></label></div>
+      <label class="check"><input id="sameTask" type="checkbox">确认使用本协议相同情境文本、类别与语言，可作描述性比较</label><button id="importHuman">导入并保留来源</button> <a href="/api/state/human-template.csv">下载空白 CSV 模板</a> · <a href="/api/state/human/export.json">导出人类参照</a><p id="importStatus" class="muted"></p>
+    </details>
+  </section>
+  <section id="design" class="panel"><div class="section-title"><h2>这个实验能回答什么？</h2><a href="/study-protocol.md" target="_blank">完整实验方案 ↗</a></div>
+    <div class="three design-points"><article><b>① 上下文有效吗？</b><p>三组各三段经历，负面社交事件分别为 0、1、3 段。比较解释分布和行动意向，不预设一定出现梯度。</p></article><article><b>② 是否有社交特异性？</b><p>加入非社交情境和非社交负面经历。如果所有任务都一起变消极，不能支持社交焦虑特异性。</p></article><article><b>③ 能预测人类吗？</b><p>封存材料后，在未用于调整的情境上比较真实人类分布，并检验是否优于无记忆基线。</p></article></div>
+    <p class="muted">当前测量的是角色的文字解释与行动意向。临时诱导、稳定特质和临床症状程度不能直接互换；研究主张应限定到验证过的任务与人群。</p>
+    <details><summary>文献依据与否证条件</summary><p>人类研究支持用模糊情境观察解释偏差，但原研究的量表评分与本 Demo 的自由回答编码并非同一指标。</p><ul><li><a href="https://pubmed.ncbi.nlm.nih.gov/10402689/" target="_blank" rel="noreferrer">Constans 等（1999）</a>：观察正面解释减少及内容特异性。</li><li><a href="https://link.springer.com/article/10.1007/s10608-020-10097-1" target="_blank" rel="noreferrer">Miers 等（2020）</a>：线上 / 线下解释偏差与社交焦虑、回避意向。</li><li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12184514/" target="_blank" rel="noreferrer">Gao 等（2025）</a>：LLM 与人类分布对齐必须逐任务验证。</li></ul><p>无稳定条件差异、换措辞即反转、非社交对照同样变化、或真实人类误差不优于基线，都应被保留并报告。小样本 Demo 不自动输出“成功”或显著性。</p></details>
+  </section>
+</main><div id="toast" role="alert"></div></body></html>
