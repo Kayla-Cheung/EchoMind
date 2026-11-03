@@ -391,7 +391,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class LocalServer(ThreadingHTTPServer):
-    allow_reuse_address = False
+    # Windows supports an exclusive bind that protects the workspace launcher.
+    # POSIX needs SO_REUSEADDR so a clean stop can immediately restart the same port.
+    allow_reuse_address = not hasattr(socket, "SO_EXCLUSIVEADDRUSE")
 
     def server_bind(self):
         if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
