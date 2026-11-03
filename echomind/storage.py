@@ -85,6 +85,78 @@ class Store:
             db.execute("INSERT INTO trials VALUES (?,?,?,?,?,?)", (record["id"], record["timestamp"],
                 record.get("batch_id"), record["source"], record["status"], json.dumps(record, ensure_ascii=False)))
 
+    def ensure_acquisition_schema(self):
+        """Lazy additive migration; old protocols never need to change their database."""
+        with self.lock:
+            with self.connection() as db:
+                if db.execute("SELECT 1 FROM sqlite_master WHERE name='acquisition_snapshots'").fetchone():
+                    if not db.execute("SELECT 1 FROM sqlite_master WHERE name='acquisition_call_events'").fetchone():
+                        raise ValueError("记忆获取数据库结构不完整；停止运行并检查备份")
+                    return
+            backup = self.backup("before-memory-acquisition-v02-schema")
+            with self.connection() as db:
+                db.executescript("""
+                    BEGIN IMMEDIATE;
+                    CREATE TABLE IF NOT EXISTS acquisition_snapshots (
+                        id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, payload TEXT NOT NULL,
+                        payload_hash TEXT NOT NULL);
+                    CREATE TABLE IF NOT EXISTS acquisition_call_events (
+                        id TEXT PRIMARY KEY, batch_id TEXT NOT NULL, payload TEXT NOT NULL);
+                    CREATE INDEX IF NOT EXISTS acquisition_snapshot_batch ON acquisition_snapshots(batch_id);
+                    CREATE INDEX IF NOT EXISTS acquisition_call_batch ON acquisition_call_events(batch_id);
+                    CREATE TRIGGER IF NOT EXISTS acquisition_snapshot_no_update
+                    BEFORE UPDATE ON acquisition_snapshots BEGIN SELECT RAISE(ABORT,'immutable memory snapshot'); END;
+                    CREATE TRIGGER IF NOT EXISTS acquisition_snapshot_no_delete
+                    BEFORE DELETE ON acquisition_snapshots BEGIN SELECT RAISE(ABORT,'immutable memory snapshot'); END;
+                    CREATE TRIGGER IF NOT EXISTS acquisition_call_no_update
+                    BEFORE UPDATE ON acquisition_call_events BEGIN SELECT RAISE(ABORT,'immutable call audit'); END;
+                    CREATE TRIGGER IF NOT EXISTS acquisition_call_no_delete
+                    BEFORE DELETE ON acquisition_call_events BEGIN SELECT RAISE(ABORT,'immutable call audit'); END;
+                    COMMIT;
+                """)
+            self.save_setting("schema:memory_acquisition_v02", {"version": 1, "backup": backup,
+                              "timestamp": datetime.now(timezone.utc).isoformat()}, immutable=True)
+
+    def freeze_memory(self, snapshot):
+        from .history import canonical, digest
+        raw, hashed = canonical(snapshot), digest(snapshot)
+        with self.lock, self.connection() as db:
+            old = db.execute("SELECT payload,payload_hash FROM acquisition_snapshots WHERE id=?", (snapshot["id"],)).fetchone()
+            if old:
+                if old[0] != raw or old[1] != hashed:
+                    raise ValueError("冻结快照不可覆盖")
+                return hashed
+            db.execute("INSERT INTO acquisition_snapshots VALUES (?,?,?,?)",
+                       (snapshot["id"], snapshot["batch_id"], raw, hashed))
+        return hashed
+
+    def acquisition_rows(self, table, batch_id=None):
+        if table not in ("acquisition_snapshots", "acquisition_call_events"):
+            raise ValueError("未知审计表")
+        with self.lock, self.connection() as db:
+            if not db.execute("SELECT 1 FROM sqlite_master WHERE name=?", (table,)).fetchone():
+                return []
+            query = "SELECT payload FROM " + table
+            return [json.loads(r[0]) for r in db.execute(query + (" WHERE batch_id=?" if batch_id else "") + " ORDER BY rowid",
+                                                         (batch_id,) if batch_id else ())]
+
+    def memory_snapshot(self, snapshot_id):
+        from .history import digest
+        with self.lock, self.connection() as db:
+            row = db.execute("SELECT payload,payload_hash FROM acquisition_snapshots WHERE id=?", (snapshot_id,)).fetchone()
+        if not row:
+            raise ValueError("找不到冻结快照")
+        value = json.loads(row[0])
+        if digest(value) != row[1]:
+            raise ValueError("冻结快照校验失败；禁止继续分支")
+        return value
+
+    def add_acquisition_call_event(self, event):
+        from .history import canonical
+        with self.lock, self.connection() as db:
+            db.execute("INSERT INTO acquisition_call_events VALUES (?,?,?)",
+                       (event["id"], event["batch_id"], canonical(event)))
+
     def update_trial(self, record):
         with self.lock, self.connection() as db:
             db.execute("UPDATE trials SET status=?, payload=? WHERE id=?", (record["status"], json.dumps(record, ensure_ascii=False), record["id"]))

@@ -14,9 +14,13 @@ from .prompts import evaluator_messages, role_messages, validate_coding
 from .state_protocol import PROTOCOL_ID, build_tasks, default_protocol
 from .mechanism import PROTOCOL_ID as MECHANISM_ID, RULE
 from .ablation import (PROTOCOL_ID as ABLATION_ID, CODER_VERSION as ABLATION_CODER,
-                      MEMORY_GROUPS, FORMATS, build_ablation_tasks)
+                       MEMORY_GROUPS, FORMATS, build_ablation_tasks)
 from .state_protocol import CORE_STATES
 from . import channels
+from . import measurement
+from . import acquisition
+from .prompt_registry import catalog
+from .history import digest
 
 MOCK_SOURCE = "MOCK_NOT_LLM"
 LIVE_SOURCE = "LIVE_LLM_API"
@@ -26,7 +30,9 @@ def utc_now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def plan(design, request, state_config=None):
+def plan(design, request, state_config=None, prompt_bundles=None):
+    if request.get("protocol") == acquisition.PROTOCOL_ID:
+        return acquisition.build_plan(design, request)
     mode = request.get("mode", "mock")
     if mode not in ("mock", "live"):
         raise ValueError("运行模式无效")
@@ -42,12 +48,16 @@ def plan(design, request, state_config=None):
     repeats = request.get("repeats", 1)
     mechanism = request.get("protocol") == MECHANISM_ID
     ablation = request.get("protocol") == ABLATION_ID
+    source_measurement = request.get("protocol") == measurement.PROTOCOL_ID
     limit = 100 if mechanism or ablation else 20
     if type(repeats) is not int or not 1 <= repeats <= limit:
         raise ValueError(f"重复次数须为 1–{limit}")
-    if request.get("protocol") not in (None, "memory-pilot-v1", PROTOCOL_ID, MECHANISM_ID, ABLATION_ID):
+    if request.get("protocol") not in (None, "memory-pilot-v1", PROTOCOL_ID, MECHANISM_ID, ABLATION_ID, measurement.PROTOCOL_ID):
         raise ValueError("未知实验协议")
-    if request.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID):
+    measurement_config = None
+    if source_measurement:
+        tasks, measurement_config = measurement.build_tasks(design, request, models, repeats, prompt_bundles)
+    elif request.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID):
         state_config = state_config or default_protocol(design)
         tasks = (build_ablation_tasks(design, request, models, repeats, state_config) if ablation else
                  build_tasks(design, request, models, repeats, state_config))
@@ -72,12 +82,18 @@ def plan(design, request, state_config=None):
     timeout = request.get("timeout", 45)
     if type(timeout) is not int or not 5 <= timeout <= 120:
         raise ValueError("超时应为 5–120 秒")
-    return {"mode": mode, "models": models, "evaluator": evaluator, "concurrency": concurrency,
+    result = {"mode": mode, "models": models, "evaluator": evaluator, "concurrency": concurrency,
             "temperature": "provider_default", "protocol": request.get("protocol", "memory-pilot-v1"),
             "state_config": state_config if request.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID) else None,
             "order_seed": seed, "request_snapshot": copy.deepcopy(request),
             "tasks": tasks, "calls": len(tasks), "coding_calls": len(tasks) if mode == "live" else 0,
             "timeout": timeout}
+    if source_measurement:
+        result["measurement_config"] = measurement_config
+        result["preview_hash"] = digest({"config": measurement_config, "models": [m.public() for m in models],
+                                         "evaluator": evaluator.public(),
+                                         "request": {k: v for k, v in request.items() if k != "preview_hash"}})
+    return result
 
 
 def legacy_tasks(design, request, models, repeats):
@@ -158,6 +174,8 @@ def mock_ablation(task):
                   "coding_reason": "MOCK 固定样例；非真实模型证据"}, {}, {}
 
 def execute_task(store, design, task, settings, batch_id, cancelled):
+    if settings.get("protocol") == measurement.PROTOCOL_ID:
+        return measurement.execute_task(store, task, settings, batch_id, cancelled, call)
     model_spec = task["model_spec"]
     evaluator_spec = settings["evaluator"]
     snapshot = copy.deepcopy({"design": design, "scenario": task["scenario"], "memories": task["memories"],
@@ -254,7 +272,13 @@ class JobManager:
         if offline_mode() and request.get("mode") == "live":
             raise ValueError("离线模式仅允许 MOCK；未读取凭据或发起 API 调用")
         design = self.store.design()
-        settings = plan(design, request, self.store.state_protocol() if request.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID) else None)
+        settings = plan(design, request, self.store.state_protocol() if request.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID) else None,
+                        catalog(self.store) if request.get("protocol") == measurement.PROTOCOL_ID else None)
+        if request.get("protocol") == measurement.PROTOCOL_ID and request.get("preview_hash") != settings["preview_hash"]:
+            raise ValueError("请先预览同一份配置；提示、材料或参数改变后必须重新预览")
+        if request.get("protocol") == acquisition.PROTOCOL_ID:
+            acquisition.check_start(self.store, settings)
+            self.store.ensure_acquisition_schema()
         job_id = str(uuid.uuid4())
         job = {"id": job_id, "status": "queued", "total": settings["calls"], "completed": 0,
                "role_calls": settings["calls"], "coding_calls": settings["coding_calls"], "record_ids": [],
@@ -263,6 +287,18 @@ class JobManager:
                "stop_reason": None, "consecutive_failures": 0,
                "failure_policy": {"authentication": "stop", "rate_limit_after_retries": "stop", "consecutive_failures": 3},
                "error": None, "cancel_event": threading.Event()}
+        if settings.get("measurement_config"):
+            job.update(config_hash=settings["preview_hash"], measurement_config=settings["measurement_config"],
+                       request_snapshot=settings["request_snapshot"])
+        if settings["protocol"] == acquisition.PROTOCOL_ID:
+            job.update(source=MOCK_SOURCE if settings["mode"] == "mock" else LIVE_SOURCE,
+                       phase=settings["phase"], protocol_hash=settings["protocol_hash"],
+                       preview_hash=settings["preview_hash"], request_snapshot=settings["request_snapshot"],
+                       acquisition_config=settings["config"], snapshot_ids=[],
+                       acquisition_calls=settings["acquisition_calls"], nominal_api_calls=settings["nominal_api_calls"],
+                       max_api_calls=settings["max_api_calls"], api_attempts=0, request_attempts=0, simulated_attempts=0,
+                       failure_policy={"authentication": "stop", "rate_limit_after_retries": "stop",
+                                       "parse_error": "stop_on_first", "isolation_or_history_loss": "stop"})
         with self.lock:
             self.jobs[job_id] = job
             self._persist(job)
@@ -270,6 +306,8 @@ class JobManager:
         return self.public(job)
 
     def _run(self, job, design, settings):
+        if settings["protocol"] == acquisition.PROTOCOL_ID:
+            return acquisition.run(self.store, job, settings, call, self._persist)
         with self.lock:
             job["status"] = "running"
             self._persist(job)

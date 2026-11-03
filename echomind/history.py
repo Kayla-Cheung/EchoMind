@@ -67,14 +67,32 @@ def batch_report(records, batch_id):
     rows = [r for r in records if batch_key(r) == batch_id]
     if not rows:
         raise ValueError("没有对应批次")
+    if {r.get("protocol") for r in rows} == {"memory_acquisition_v02"}:
+        from .acquisition import summarize
+        report = summarize(rows, batch_id)
+        report.pop("records")
+        return {"batch": batches(rows)[0], "cells": [], "records": rows,
+                "original_report": report, "original_report_error": None, "acquisition_report": report,
+                "measurement_note": "Memory Acquisition v0.2：smoke/MVP 与 MOCK/REAL 分开；同一快照的四个情境为相关观测。完整分类、逐情境差值及快照见记忆获取页；不合并平均、不自动显著性检验。"}
+    if {r.get("protocol") for r in rows} == {"memory-source-v2"}:
+        from .measurement import summarize
+        measured = summarize(rows, batch_id)
+        measured = {k: v for k, v in measured.items() if k != "records"}
+        return {"batch": batches(rows)[0], "cells": [], "records": rows,
+                "original_report": measured,
+                "original_report_error": None, "measurement_report": measured,
+                "measurement_note": "来源对照 v2 使用独立多维编码，不转换成旧 positive/neutral/negative 分类。比例分母为非空角色回答，未知与失败单列；按材料、情境、模型及版本分层。"}
     # Each cell retains protocol, source, measurement version and configuration.
     # Never pool model variants or settings just because their display names match.
     keys = ("protocol", "source", "model", "evaluator_model", "coder_version", "scenario_id",
-            "condition", "ablation_format", "output_format", "induction_variant", "prompt_hash")
+            "condition", "ablation_format", "output_format", "induction_variant", "prompt_hash", "design_hash", "protocol_hash")
     groups = defaultdict(list)
     for row in rows:
         key = tuple(str(row.get(k) or (LEGACY if k == "protocol" else "unknown")) for k in keys)
-        key += (digest([row.get("model_spec"), row.get("evaluator_spec"), row.get("model_parameters")]),)
+        snapshot = row.get("snapshot") if isinstance(row.get("snapshot"), dict) else {}
+        design = snapshot.get("design") if isinstance(snapshot.get("design"), dict) else {}
+        key += (digest([row.get("model_spec"), row.get("evaluator_spec"), row.get("model_parameters"),
+                       design.get("coding_rules"), row.get("evidence_rule")]),)
         groups[key].append(row)
     cells = []
     for key, subset in groups.items():
@@ -100,7 +118,7 @@ def batch_report(records, batch_id):
             original = summarize_ablation(rows, batch_id)
         if original:
             original = {k: v for k, v in original.items() if k != "records"}
-    except (ValueError, KeyError, TypeError) as exc:
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
         original_error = "旧报告所需字段不足；原记录仍完整可见：" + str(exc)
     return {"batch": batches(rows)[0], "cells": cells, "records": rows,
             "original_report": original, "original_report_error": original_error,

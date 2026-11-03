@@ -20,24 +20,26 @@ from .env_config import load_local_keys
 from .model_client import PROVIDERS, call, make_spec, provider_info, offline_mode
 from . import history
 from . import prompt_registry
+from . import measurement
+from . import acquisition
 from .prompts import role_messages, validate_coding
 from .runner import JobManager, plan
 from .storage import Store
 from .state_protocol import PROTOCOL_ID, STATE_LABELS, VARIANTS
 from .state_analysis import summarize_states
 from .mechanism import (PROTOCOL_ID as MECHANISM_ID, LABELS as MECHANISM_LABELS,
-                       RULE, mechanism_batches, summarize_mechanism)
+                        RULE, mechanism_batches, summarize_mechanism)
 from .ablation import (PROTOCOL_ID as ABLATION_ID, MEMORY_GROUPS, FORMATS,
-                      LABELS as ABLATION_LABELS, FORMAT_LABELS,
-                      ablation_batches, summarize_ablation)
+                       LABELS as ABLATION_LABELS, FORMAT_LABELS,
+                       ablation_batches, summarize_ablation)
 
 ROOT = Path(__file__).resolve().parents[1]
-STORE = Store(Path(os.getenv("ECHOMIND_DB", str(ROOT / "data" / "pilot.sqlite3"))))
+STORE = Store(Path(os.getenv("ECHOMIND_DB", os.getenv("ECHOMIND_PILOT_DB", str(ROOT / "data" / "pilot.sqlite3")))))
 JOBS = JobManager(STORE)
 MAX_BODY = 1_000_000
 MAX_IMPORT_BODY = 50_000_000
 PROVIDER_TESTS = {}
-WORKBENCH_VERSION = "echomind-v1"
+WORKBENCH_VERSION = "research-repair-v1"
 
 
 def code_revision():
@@ -58,7 +60,8 @@ def csv_export(records):
               "role_latency_ms", "coder_latency_ms", "error", "protocol", "target_state", "induction_variant",
               "scenario_split", "scenario_hash", "protocol_hash", "design_hash", "schedule_index",
               "output_format", "ablation_format", "memory_source", "thought", "speech", "behavior", "format_error",
-              "role_messages_json", "evaluator_messages_json", "model_parameters_json", "record_json"]
+              "role_messages_json", "evaluator_messages_json", "model_parameters_json", "record_json",
+              "material_id", "memory_valence", "bundle_hash", "coding_schema", "negative_attribution", "benign_attribution", "actions_json"]
     writer = csv.DictWriter(buf, fieldnames=fields)
     writer.writeheader()
     for r in records:
@@ -77,6 +80,10 @@ def csv_export(records):
         for field in ("role_messages", "evaluator_messages", "model_parameters"):
             row[field + "_json"] = json.dumps(r.get(field), ensure_ascii=False)
         row["record_json"] = json.dumps(r, ensure_ascii=False)
+        if r.get("coding_schema") == "multiaxis-v3":
+            for axis in ("negative_attribution", "benign_attribution"):
+                row[axis] = (c.get(axis) or {}).get("value")
+            row["actions_json"] = json.dumps(c.get("actions"), ensure_ascii=False)
         writer.writerow(row)
     return "\ufeff" + buf.getvalue()
 
@@ -102,9 +109,43 @@ class Handler(BaseHTTPRequestHandler):
         try:
             query = {k: v[0] for k, v in parse_qs(urlsplit(self.path).query).items()}
             if path == "/api/health":
-                return self.send({"version": WORKBENCH_VERSION, "code_revision": RUNNING_REVISION,
+                return self.send({"app_name": "EchoMind", "workspace_root": str(ROOT),
+                                  "version": WORKBENCH_VERSION, "code_revision": RUNNING_REVISION,
                                   "database": str(STORE.path), "offline": offline_mode(),
-                                  "capabilities": ["history", "safe_import", "prompt_versions", "persistent_jobs"]})
+                                  "capabilities": ["history", "safe_import", "prompt_versions", "persistent_jobs", "source_measurement_v2", "memory_acquisition_v02"]})
+            if path == "/api/acquisition/bootstrap":
+                jobs = [JOBS.get(j["id"]) for j in STORE.settings_prefix("job:") if j.get("protocol") == acquisition.PROTOCOL_ID]
+                return self.send({"protocol": acquisition.PROTOCOL_ID, "conditions": acquisition.CONDITIONS,
+                                  "labels": acquisition.LABELS, "events": acquisition.EVENTS, "scenarios": acquisition.SCENARIOS,
+                                  "providers": provider_info(), "supported_providers": sorted(acquisition.SUPPORTED),
+                                  "offline": offline_mode(), "jobs": jobs, "default_repeats": 3,
+                                  "identity": STORE.design()["identity"], "rules": acquisition.RULES,
+                                  "limitations": acquisition.LIMITATIONS, "gate_checks": acquisition.GATE_CHECKS,
+                                  "gate3": STORE.settings_prefix("acquisition-gate3:"), "database": str(STORE.path)})
+            if path in ("/api/acquisition/report", "/api/acquisition/export.json", "/api/acquisition/export.csv"):
+                report = acquisition.export_batch(STORE, query.get("batch_id"))
+                if report.get("job"):
+                    report["job"] = JOBS.get(report["job"]["id"])
+                if path.endswith(".csv"):
+                    return self.send(acquisition.export_csv(report), mime="text/csv; charset=utf-8", attachment="acquisition-v02-audit.csv")
+                return self.send(report, attachment="acquisition-v02-audit.json" if path.endswith(".json") else None)
+            if path == "/api/measurement/bootstrap":
+                return self.send({"protocol": measurement.PROTOCOL_ID, "conditions": measurement.CONDITIONS,
+                                  "scenarios": measurement.SCENARIOS, "materials": measurement.MATERIALS,
+                                  "rule": measurement.RULE, "versions": prompt_registry.catalog(STORE),
+                                  "providers": provider_info(), "offline": offline_mode(),
+                                  "jobs": [JOBS.get(j["id"]) for j in STORE.settings_prefix("job:") if j.get("protocol") == measurement.PROTOCOL_ID],
+                                  "batches": history.batches(STORE.trials(), {"protocol": measurement.PROTOCOL_ID})})
+            if path in ("/api/measurement/report", "/api/measurement/export.json"):
+                bid = query.get("batch_id")
+                return self.send(measurement.summarize(STORE.trials(), bid, JOBS.get(bid)),
+                                 attachment="source-measurement-v2.json" if path.endswith(".json") else None)
+            if path in ("/api/review/export.csv", "/api/review/key.json"):
+                pack = measurement.review_pack(STORE.trials(), query.get("batch_id"))
+                if path.endswith(".csv"):
+                    return self.send(pack["csv"], mime="text/csv; charset=utf-8", attachment="blind-primary-review.csv")
+                return self.send({"codebook": pack["codebook"], "mapping": pack["key"],
+                                  "notice": "映射仅给研究者保管，不给编码员；空白表不构成人工标注或人类实验数据。"}, attachment="review-key-researcher-only.json")
             if path == "/api/history/batches":
                 rows = STORE.trials()
                 return self.send({"batches": history.batches(rows, query), "total_records": len(rows),
@@ -121,7 +162,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(history.export(rows), attachment="echomind-history.json")
             if path == "/api/prompts":
                 return self.send({"versions": prompt_registry.catalog(STORE),
-                                  "notice": "新版本为待验证研究方案，仅离线预览；旧协议继续使用其冻结代码与记录中的实际提示。"})
+                                  "notice": "新版本可在来源对照 v2 中选用；仍是未验证方案。旧协议继续使用其冻结代码与记录中的实际提示。"})
             if path == "/api/prompts/export.json":
                 return self.send(prompt_registry.get_bundle(STORE, query.get("version")), attachment="prompt-bundle.json")
             if path == "/api/ablation/bootstrap":
@@ -171,7 +212,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/providers":
                 return self.send([{**info, "status": PROVIDER_TESTS.get(info["id"], {}).get("status", "未配置" if not info["configured"] else None)} for info in provider_info()])
             if path == "/api/trials":
-                return self.send([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID)])
+                return self.send([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID, measurement.PROTOCOL_ID, acquisition.PROTOCOL_ID)])
             if path.startswith("/api/jobs/"):
                 return self.send(JOBS.get(path.rsplit("/", 1)[-1]))
             if path == "/api/export.json":
@@ -179,21 +220,36 @@ class Handler(BaseHTTPRequestHandler):
                                  attachment="context-memory-trials.json")
             if path == "/api/export.csv":
                 return self.send(csv_export(STORE.trials()), mime="text/csv; charset=utf-8", attachment="context-memory-trials.csv")
-            assets = {
-                "/": ("web/index.html", "text/html; charset=utf-8"),
-                "/ablation": ("web/index.html", "text/html; charset=utf-8"),
-                "/history.js": ("web/history.js", "application/javascript; charset=utf-8"),
-                "/history.css": ("web/history.css", "text/css; charset=utf-8"),
-                "/ablation.js": ("web/ablation.js", "application/javascript; charset=utf-8"),
-                "/ablation.css": ("web/ablation.css", "text/css; charset=utf-8"),
-                "/unified.js": ("web/unified.js", "application/javascript; charset=utf-8"),
-                "/unified.css": ("web/unified.css", "text/css; charset=utf-8"),
-                "/mechanism.js": ("web/mechanism.js", "application/javascript; charset=utf-8"),
-                "/mechanism.css": ("web/mechanism.css", "text/css; charset=utf-8"),
-                "/ablation-protocol.md": ("docs/ablation.md", "text/plain; charset=utf-8"),
-                "/mechanism-protocol.md": ("docs/mechanism.md", "text/plain; charset=utf-8"),
-                "/study-protocol.md": ("docs/state.md", "text/plain; charset=utf-8"),
-            }
+            assets = {"/ablation": ("web/unified.html", "text/html; charset=utf-8"),
+                      "/history.js": ("web/history.js", "application/javascript; charset=utf-8"),
+                      "/history.css": ("web/history.css", "text/css; charset=utf-8"),
+                      "/ablation.js": ("web/ablation.js", "application/javascript; charset=utf-8"),
+                      "/echomind.ablation.js": ("web/ablation.js", "application/javascript; charset=utf-8"),
+                      "/ablation.css": ("web/ablation.css", "text/css; charset=utf-8"),
+                      "/ablation-protocol.md": ("docs/ablation.md", "text/plain; charset=utf-8"),
+                      "/": ("web/unified.html", "text/html; charset=utf-8"),
+                      "/unified.js": ("web/unified.js", "application/javascript; charset=utf-8"),
+                      "/unified.css": ("web/unified.css", "text/css; charset=utf-8"),
+                      "/study": ("web/study.html", "text/html; charset=utf-8"),
+                      "/mechanism.js": ("web/mechanism.js", "application/javascript; charset=utf-8"),
+                      "/echomind.mechanism.js": ("web/mechanism.js", "application/javascript; charset=utf-8"),
+                      "/mechanism.css": ("web/mechanism.css", "text/css; charset=utf-8"),
+                      "/mechanism-protocol.md": ("docs/mechanism.md", "text/plain; charset=utf-8"),
+                      "/workbench": ("web/index.html", "text/html; charset=utf-8"),
+                      "/study.js": ("web/study.js", "application/javascript; charset=utf-8"),
+                      "/study.css": ("web/study.css", "text/css; charset=utf-8"),
+                      "/study-protocol.md": ("docs/state.md", "text/plain; charset=utf-8"),
+                      "/app.js": ("web/app.js", "application/javascript; charset=utf-8"),
+                      "/multi.js": ("web/multi.js", "application/javascript; charset=utf-8"),
+                      "/style.css": ("web/style.css", "text/css; charset=utf-8")}
+            assets["/multi.css"] = ("web/multi.css", "text/css; charset=utf-8")
+            assets["/demo.css"] = ("web/demo.css", "text/css; charset=utf-8")
+            assets["/measurement.js"] = ("web/measurement.js", "application/javascript; charset=utf-8")
+            assets["/measurement.css"] = ("web/measurement.css", "text/css; charset=utf-8")
+            assets["/SOURCE_MEASUREMENT_V2.md"] = ("docs/source-measurement-v2.md", "text/plain; charset=utf-8")
+            assets["/acquisition.js"] = ("web/acquisition.js", "application/javascript; charset=utf-8")
+            assets["/acquisition.css"] = ("web/acquisition.css", "text/css; charset=utf-8")
+            assets["/MVP_PROTOCOL.md"] = ("docs/memory-acquisition-v02.md", "text/plain; charset=utf-8")
             if path in assets:
                 rel, mime = assets[path]
                 return self.send((ROOT / rel).read_bytes(), mime=mime)
@@ -216,6 +272,17 @@ class Handler(BaseHTTPRequestHandler):
                                  commit=path.endswith("/commit"), expected_digest=data.get("digest")))
             if path == "/api/prompts":
                 return self.send(prompt_registry.save_bundle(STORE, data), 201)
+            if path == "/api/acquisition/preview":
+                if data.get("protocol") != acquisition.PROTOCOL_ID:
+                    raise ValueError("必须选择 memory_acquisition_v02")
+                return self.send(acquisition.preview(plan(STORE.design(), data)))
+            if path == "/api/acquisition/review-smoke":
+                return self.send(acquisition.review_smoke(STORE, data), 201)
+            if path == "/api/measurement/preview":
+                if data.get("protocol") != measurement.PROTOCOL_ID:
+                    raise ValueError("预览须选择来源对照 v2 协议")
+                prepared = plan(STORE.design(), data, prompt_bundles=prompt_registry.catalog(STORE))
+                return self.send(measurement.preview_plan(prepared))
             if path == "/api/prompts/preview":
                 bundle = data.get("bundle") or prompt_registry.get_bundle(STORE, data.get("version"))
                 return self.send(prompt_registry.preview(bundle, data.get("name", "林知"),
@@ -273,7 +340,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("该条件没有选中记忆")
                 return self.send(role_messages(d, scenario, selected))
             if path == "/api/estimate":
-                p = plan(STORE.design(), data, STORE.state_protocol() if data.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID) else None)
+                p = plan(STORE.design(), data, STORE.state_protocol() if data.get("protocol") in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID) else None,
+                         prompt_registry.catalog(STORE) if data.get("protocol") == measurement.PROTOCOL_ID else None)
                 return self.send({"role_calls": p["calls"], "coding_calls": p["coding_calls"],
                     "concurrency": p["concurrency"], "providers": sorted({m.provider for m in p["models"]}),
                     "warning": "API 费用随模型、上下文和输出长度变化；请核对供应商当前价格。"})
@@ -305,12 +373,12 @@ class Handler(BaseHTTPRequestHandler):
                 source = data.get("source", "LIVE_LLM_API")
                 if source not in ("LIVE_LLM_API", "MOCK_NOT_LLM"):
                     raise ValueError("来源无效")
-                return self.send(summarize([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID)], source, data.get("filters")))
+                return self.send(summarize([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID, measurement.PROTOCOL_ID, acquisition.PROTOCOL_ID)], source, data.get("filters")))
             if path == "/api/model-analysis":
                 source = data.get("source", "LIVE_LLM_API")
                 if source not in ("LIVE_LLM_API", "MOCK_NOT_LLM"):
                     raise ValueError("来源无效")
-                return self.send(model_comparison([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID)], source, data.get("filters")))
+                return self.send(model_comparison([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID, measurement.PROTOCOL_ID, acquisition.PROTOCOL_ID)], source, data.get("filters")))
             return self.send({"error": "Not Found"}, 404)
         except (ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
             return self.send({"error": str(exc)}, 400)
@@ -333,8 +401,9 @@ class LocalServer(ThreadingHTTPServer):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8768)
+    parser.add_argument("--port", type=int, default=8769)
     parser.add_argument("--open-browser", action="store_true")
+    parser.add_argument("--open-path", choices=("/", "/#acquisition"), default="/")
     parser.add_argument("--offline", action="store_true", help="Do not read credentials; prohibit all paid API calls")
     args = parser.parse_args()
     if args.offline:
@@ -342,10 +411,10 @@ def main():
     if not offline_mode():
         load_local_keys(ROOT / ".env")
     server = LocalServer(("127.0.0.1", args.port), Handler)
-    print(f"EchoMind Context Memory Pilot: http://127.0.0.1:{args.port}")
+    print(f"EchoMind Research Workbench: http://127.0.0.1:{args.port}")
     print(f"Database: {STORE.path} | revision: {RUNNING_REVISION} | offline: {offline_mode()}")
     if args.open_browser:
-        threading.Timer(0.5, lambda: webbrowser.open(f"http://127.0.0.1:{args.port}")).start()
+        threading.Timer(0.5, lambda: webbrowser.open(f"http://127.0.0.1:{args.port}{args.open_path}")).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:

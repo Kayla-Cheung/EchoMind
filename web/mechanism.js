@@ -102,7 +102,7 @@ async function run() {
     }
     const job = await api('/api/jobs', data);
     activeJob = job.id;
-    sessionStorage.setItem('sos.mechanism.job', activeJob);
+    sessionStorage.setItem('echomind.mechanism.job', activeJob);
     report = null;
     $('rates').replaceChildren();
     $('responses').innerHTML = '<div class="empty">整批完成后查看逐次回答。</div>';
@@ -122,7 +122,7 @@ async function poll() {
     if (['complete', 'cancelled', 'error'].includes(job.status)) {
       const completedId = activeJob;
       activeJob = null;
-      sessionStorage.removeItem('sos.mechanism.job');
+      sessionStorage.removeItem('echomind.mechanism.job');
       lock(false);
       $('progress').textContent += job.status === 'complete' ? ' · 已结束' : job.status === 'cancelled' ? ' · 已停止' : ' · ' + job.error;
       await refreshBatches(completedId);
@@ -134,7 +134,7 @@ async function poll() {
     setTimeout(poll, 900);
   } catch (error) {
     activeJob = null;
-    sessionStorage.removeItem('sos.mechanism.job');
+    sessionStorage.removeItem('echomind.mechanism.job');
     lock(false);
     toast('任务状态读取失败；已保存记录可从批次列表查看。' + error.message);
     await refreshBatches();
@@ -238,7 +238,7 @@ async function init() {
     };
     materials(); scene();
     await refreshBatches();
-    activeJob = sessionStorage.getItem('sos.mechanism.job');
+    activeJob = sessionStorage.getItem('echomind.mechanism.job');
     if (activeJob) { lock(true); poll(); }
   } catch (error) { $('connection').textContent = '连接失败'; toast(error.message); }
 }

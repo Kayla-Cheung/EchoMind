@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EchoMind · 记忆与行为实验台</title>
+  <link rel="stylesheet" href="/mechanism.css">
+  <link rel="stylesheet" href="/ablation.css">
+  <link rel="stylesheet" href="/unified.css">
+  <link rel="stylesheet" href="/history.css">
+  <link rel="stylesheet" href="/measurement.css">
+  <link rel="stylesheet" href="/acquisition.css">
+  <script src="/unified.js" defer></script>
+  <script src="/mechanism.js" defer></script>
+  <script src="/ablation.js" defer></script>
+  <script src="/history.js" defer></script>
+  <script src="/measurement.js" defer></script>
+  <script src="/acquisition.js" defer></script>
+</head>
+<body>
+<header>
+  <a href="/" class="brand">EchoMind<span>记忆与行为实验台</span></a>
+  <span id="workspace-connection">本地实验工作台</span>
+</header>
+<main>
+  <div class="workspace-intro">
+    <p class="eyebrow">EchoMind · EXPERIMENT WORKSPACE</p>
+    <h1>让每个结论回到原始证据。</h1>
+    <p class="lead">查看完整历史，检查实际提示与编码，再设计能排除替代解释的实验。</p>
+  </div>
+  <div role="tablist" aria-label="选择实验模式" class="experiment-tabs" id="experiment-tabs">
+    <button type="button" role="tab" id="tab-history" aria-controls="view-history" aria-selected="false">历史与分析 <span>所有协议 · 含失败记录</span></button>
+    <button type="button" role="tab" id="tab-measurement" aria-controls="view-measurement" aria-selected="false">来源对照 v2 <span>新实验 · 匹配材料 · 多维编码</span></button>
+    <button type="button" role="tab" id="tab-acquisition" aria-controls="view-acquisition" aria-selected="false">Demo 2 · Context 注入 <span>七组 · 冻结输入 · 独立分支</span></button>
+    <button type="button" role="tab" id="tab-mechanism" aria-controls="view-mechanism" aria-selected="true">经历强度对比 <span>原机制实验</span></button>
+    <button type="button" role="tab" id="tab-ablation" aria-controls="view-ablation" aria-selected="false">记忆归属 × 输出格式 <span>消融实验</span></button>
+    <button type="button" role="tab" id="tab-prompts" aria-controls="view-prompts" aria-selected="false">Prompt 与研究 <span>版本 · 审计 · 下一步</span></button>
+  </div>
+  <p class="protocol-note" id="protocol-note">各实验使用独立协议与编码版本。新版多维归因不能直接换算成旧版负面率，不跨协议合并检验。</p>
+  <section id="view-acquisition" role="tabpanel" aria-labelledby="tab-acquisition" hidden tabindex="0">
+    <section class="panel">
+      <p class="eyebrow">CONTEXT INJECTION · DEMO 2</p>
+      <h2>不同 Context 注入策略，会怎样影响同一模型的输出？</h2>
+      <p>固定身份与模型 → 注入情境前缀 → 冻结输入消息 → 四个独立情境 → 公开解释、话语与行动意向 → 独立请求编码。</p>
+      <p class="hint">这里只检验受控模糊情境中的输出变化。快照保存可重放的输入，不要求形成持久记忆、心智状态或多 Agent 模拟。编码请求不参与情境互动。</p>
+      <p class="hint">无附加 Context 基线，加中性／负性 × 简短文本／静态记录／固定事件对话，共七组。默认 21 份输入快照、84 条最终决策。对话条件包含模型自生成回应、长度和消息位置等差异，比较的是整体注入策略；只做逐情境的探索性描述。</p>
+      <div class="links"><a href="/MVP_PROTOCOL.md" target="_blank">冻结协议与操作说明 ↗</a><a href="#history">全部历史 ↗</a></div>
+      <p id="acq-environment" class="hint"></p>
+      <details><summary>固定事件、情境与研究限制</summary><pre id="acq-materials"></pre></details>
+    </section>
+    <section class="panel">
+      <h2>1 · 配置与调用预览</h2>
+      <fieldset id="acq-controls"><div class="m-grid">
+        <label>运行方式<select id="acq-mode"><option value="mock">MOCK · 离线流程验证</option><option value="live">REAL · 用户手动确认</option></select></label>
+        <label>阶段<select id="acq-phase"><option value="exploratory_mvp">探索性 MVP</option><option value="smoke_test">smoke_test · 每格 1 次</option></select></label>
+        <label>独立重复次数<input id="acq-repeats" type="number" min="1" max="20" value="3"></label>
+        <label>决策模型 Provider<select id="acq-provider"></select></label><label>决策模型<input id="acq-model" value="deepseek-flash"></label>
+        <label>温度（留空为默认）<input id="acq-temperature" type="number" min="0" max="2" step="0.1"></label>
+        <label>编码请求 Provider<select id="acq-coder-provider"></select></label><label>编码模型<input id="acq-coder-model" value="deepseek-flash"></label>
+        <label>最大 API 请求数（含重试）<input id="acq-max-calls" type="number" min="1" max="2000" value="400"></label>
+      </div>
+      <div id="acq-scenarios" class="acq-options"></div>
+      <details><summary>采样顺序与重试</summary><div class="m-grid">
+        <label>执行顺序种子（不是模型 seed）<input id="acq-order" type="number" min="0" value="20261022"></label>
+        <label>每次调用最多尝试次数<input id="acq-attempts" type="number" min="1" max="3" value="2"></label>
+        <label>请求超时（秒）<input id="acq-timeout" type="number" min="5" max="120" value="45"></label>
+      </div></details>
+      <div id="acq-live-options" hidden>
+        <p class="hint">先完成同配置 84 条 MOCK。REAL smoke 固定 28 条决策；人工检查通过后才可启动 REAL MVP。请自行核实模型单价，不自动读取账户余额或发起连接测试。</p>
+        <div class="m-grid">
+          <label>前置 84 条 MOCK 批次<select id="acq-mock-batch"></select></label><label>已人工通过的 smoke 批次<select id="acq-smoke-batch"></select></label>
+          <label>币种<input id="acq-currency" value="CNY"></label><label>总预算<input id="acq-budget" type="number" min="0.000001" step="0.01"></label>
+          <label>Agent 输入单价／百万 token<input id="acq-price-in" type="number" min="0" step="0.01"></label>
+          <label>Agent 输出单价／百万 token<input id="acq-price-out" type="number" min="0" step="0.01"></label>
+          <label>Coder 输入单价／百万 token<input id="acq-coder-price-in" type="number" min="0" step="0.01"></label>
+          <label>Coder 输出单价／百万 token<input id="acq-coder-price-out" type="number" min="0" step="0.01"></label>
+        </div>
+        <label class="m-check"><input id="acq-confirm-live" type="checkbox">我已核实单价、前置批次和费用风险，明确启动本次 REAL。</label>
+      </div></fieldset>
+      <div class="runbar"><button id="acq-preview">预览完整消息与调用量</button><button id="acq-run" class="primary" disabled>运行已预览配置</button><button id="acq-cancel" disabled>中止后续调用</button></div>
+      <p id="acq-count" class="hint">默认 21 份输入快照、84 条决策；先预览，不会自动调用真实 API。</p>
+      <details id="acq-preview-details"><summary>查看七组的实际消息结构</summary><select id="acq-example"></select><pre id="acq-prompt"></pre></details>
+      <progress id="acq-progress" value="0" max="84"></progress><p id="acq-status" aria-live="polite"></p>
+    </section>
+    <section class="panel">
+      <div class="section-head"><h2>2 · 逐情境结果与冻结快照</h2><button id="acq-refresh">刷新批次</button></div>
+      <select id="acq-batch"></select><div id="acq-links" class="links"></div><div id="acq-result"></div>
+      <details><summary>查看冻结快照及交互中间回应</summary><select id="acq-snapshot"></select><pre id="acq-snapshot-content"></pre></details>
+      <details><summary>逐条原始回答、消息与编码</summary><div id="acq-records"></div></details>
+      <details id="acq-gate-review" hidden><summary>Gate 3 人工复核（只保存复核，不发起实验）</summary>
+        <p class="hint">先查看实际快照、请求顺序、输出和 usage。若 Provider 无法保留多轮历史，不勾选通过，不把 Interactive 改成 Direct。</p>
+        <div id="acq-checks" class="acq-options"></div>
+        <label>复核人<input id="acq-reviewer"></label><label>实际核对记录<textarea id="acq-review-notes" rows="3"></textarea></label>
+        <button id="acq-approve">保存 Gate 3 复核</button>
+      </details>
+    </section>
+  </section>
+  <section id="view-measurement" role="tabpanel" aria-labelledby="tab-measurement" hidden tabindex="0">
+    <section class="panel">
+      <p class="eyebrow">SOURCE × VALENCE · V2</p><h2>同一事件属于谁，会改变回答吗？</h2>
+      <p>固定事件正文，只改变“经历主体”；同时比较平稳与不利经历。先确认测量，再检验效应能否跨材料、情境和提示方案出现。</p>
+      <div class="m-steps"><div><b>1 · 校准编码</b><p>在历史页下载原 A/B 的盲评 CSV，交给两名编码员独立判断。空白表不是人工结果。</p></div><div><b>2 · 预览并运行</b><p>四个条件固定配齐。可选 A 自然接续或 B 两项回答；自定义版本从 Prompt 管理保存后选用。</p></div><div><b>3 · 检查边界</b><p>按情境、材料与版本分别看差值。无效、未知和零差异均保留；不自动宣布模拟成功。</p></div></div>
+      <p class="hint">材料及“近／远”分类尚未人工验证，均为开发材料。A/B 改变测量要求，不是纯格式对照。人类文献数据仍在原机制页，仅作背景参考。</p>
+      <div class="links"><a href="/SOURCE_MEASUREMENT_V2.md" target="_blank" rel="noopener">本轮设计与使用教程 ↗</a><a href="#history">原始结果与盲评材料</a><a href="#prompts">管理提示版本</a></div>
+    </section>
+    <section class="panel"><div class="section-head"><h2>实验配置</h2><span id="m-connection" class="hint">正在连接…</span></div>
+      <fieldset id="m-config">
+        <div class="runbar"><button id="m-quick" type="button">快速检查 · 8 条</button><button id="m-pilot" type="button">研究配置 · 192 条</button><button id="m-versions-refresh" type="button">刷新提示版本</button></div>
+        <div class="m-grid">
+          <label>运行模式<select id="m-mode"><option value="mock">MOCK · 离线流程检查</option><option value="live">真实模型 · 可能产生费用</option></select></label>
+          <label>每格重复数<input type="number" id="m-repeats" min="1" max="20" value="1"></label>
+          <label>角色供应商<select id="m-provider"></select></label><label>角色模型<input id="m-model" autocomplete="off"></label>
+          <label>编码供应商<select id="m-coder-provider"></select></label><label>编码模型<input id="m-coder-model" autocomplete="off"></label>
+        </div>
+        <div class="m-grid"><fieldset><legend>情境（可多选）</legend><div id="m-scenes" class="m-options"></div></fieldset><fieldset><legend>材料包（可多选）</legend><div id="m-materials" class="m-options"></div></fieldset><fieldset><legend>提示方案（选择 1–2 个，编码器须相同）</legend><div id="m-versions" class="m-options"></div></fieldset></div>
+        <details><summary>模型参数与运行上限</summary><p class="hint">参数留空即供应商默认；实际发送参数随记录保存。顺序随机种子不等于模型采样种子。</p><div class="m-grid">
+          <label>角色 temperature<input id="m-temperature" type="number" min="0" max="2" step="0.1" placeholder="默认"></label><label>编码 temperature<input id="m-coder-temperature" type="number" min="0" max="2" step="0.1" placeholder="默认"></label>
+          <label>角色 thinking<select id="m-thinking"><option value="">默认</option><option>disabled</option><option>enabled</option><option>adaptive</option></select></label><label>编码 thinking<select id="m-coder-thinking"><option value="">默认</option><option>disabled</option><option>enabled</option><option>adaptive</option></select></label>
+          <label>角色 MiniMax 区域<select id="m-region"><option value="international">国际</option><option value="china">中国</option></select></label><label>编码 MiniMax 区域<select id="m-coder-region"><option value="international">国际</option><option value="china">中国</option></select></label>
+          <label>并发数<input id="m-concurrency" type="number" min="1" max="3" value="1"></label><label>单调用超时（秒）<input id="m-timeout" type="number" min="5" max="120" value="45"></label><label>角色调用上限<input id="m-max" type="number" min="1" max="1000" value="250"></label>
+        </div></details>
+      </fieldset>
+      <div class="m-four" id="m-conditions"></div><p id="m-count" class="hint"></p>
+      <div class="runbar"><button id="m-preview" type="button">预览配置与完整 Prompt</button><button id="m-run" type="button" class="primary" disabled>运行已预览的 MOCK</button><button id="m-cancel" type="button" disabled>停止后续任务</button></div>
+      <label id="m-confirm-label" class="m-check" hidden><input id="m-confirm" type="checkbox">我已核对本次配置与调用数量，确认发起这批付费调用。</label>
+      <p id="m-status" role="status" aria-live="polite"></p><progress id="m-progress" max="1" value="0" aria-label="实验进度"></progress>
+      <details id="m-preview-details"><summary>实际 Prompt 预览与冻结配置</summary><label>条件与提示<select id="m-example"></select></label><pre id="m-prompt"></pre><details><summary>本次完整配置与校验值</summary><pre id="m-frozen"></pre></details></details>
+    </section>
+    <section class="panel"><div class="section-head"><h2>分层结果与原始回答</h2><button id="m-refresh" type="button">刷新批次</button></div><label>来源对照 v2 批次<select id="m-batch"></select></label><div id="m-result"><p class="empty">尚无新协议批次。先用 MOCK 验证流程；旧 A/B 保留在历史页。</p></div></section>
+  </section>
+  <section id="view-mechanism" role="tabpanel" aria-labelledby="tab-mechanism" tabindex="0">
+    <div class="pane-utility"><span id="connection">正在连接原机制实验…</span><a href="/mechanism-protocol.md" target="_blank" rel="noopener">原机制判定规则 ↗</a></div>
+
+  <section class="intro"><p class="eyebrow">MEMORY → RESPONSE</p><h1>同一问题，不同经历。</h1><p class="lead">重复提问，观察回答的比例如何变化。</p>
+    <div class="claim"><span>本次 Claim</span><p id="claim">固定人物、模型和同一问题，仅改变经历条件，会改变回答中的解释或行动比例。</p></div>
+  </section>
+  <section class="panel" aria-labelledby="setupTitle">
+    <div class="section-head"><h2 id="setupTitle"><span>01</span> 固定问题，重复回答</h2><small id="identity"></small></div>
+    <fieldset id="configuration">
+      <div class="inputs">
+        <label class="wide">问题<select id="scenario"></select></label>
+        <label>角色模型<select id="provider"></select></label>
+        <label>每组回答次数<input id="repeats" type="number" min="1" max="100" value="20"></label>
+        <label>运行方式<select id="mode"><option value="mock">MOCK · 体验流程</option><option value="live">真实模型 · 检验 Claim</option></select></label>
+      </div>
+      <blockquote id="situation"></blockquote>
+      <div id="stateCards" class="three"></div>
+      <details class="settings"><summary>模型参数与实际提示</summary>
+        <div class="inputs advanced">
+          <label>角色模型 ID<input id="model"></label><label>固定编码器<select id="evaluator"></select></label>
+          <label>编码器模型 ID<input id="evaluatorModel"></label>
+          <label>材料版<select id="variant"><option>A</option><option>B</option><option>C</option></select></label>
+          <label>角色 MiniMax 区域<select id="region"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+          <label>编码器 MiniMax 区域<select id="evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label>
+        </div>
+        <p class="hint">同组每次使用完全相同的提示和独立上下文，三组顺序随机交错。DeepSeek Flash 固定为非推理模式：角色温度 1，编码温度 0；其他模型使用供应商默认值。编码器只看问题和回答。</p>
+        <label>查看一个条件的实际 Prompt<select id="previewCondition"></select></label><pre id="prompt"></pre>
+      </details>
+    </fieldset>
+    <div class="runbar"><button id="run" class="primary" disabled>运行三组 × 20 次</button><button id="cancel" hidden>停止后续调用</button><span id="progress" role="status" aria-live="polite"></span></div>
+    <p id="estimate" class="hint"></p>
+  </section>
+  <section class="panel" id="results" aria-labelledby="resultTitle">
+    <div class="section-head"><h2 id="resultTitle"><span>02</span> 用比例判断</h2><div class="links"><a id="csv" hidden>导出 CSV</a><a id="json" hidden>证据与原文 JSON</a></div></div>
+    <label class="batch-label">查看批次<select id="batch"><option value="">尚无记录</option></select></label>
+    <p id="batchContext" class="hint"></p>
+    <div id="verdict" class="verdict empty" role="status"><b>等待第一组结果</b><p>先体验流程，再切换真实模型检验。每个批次独立呈现。</p></div>
+    <div id="rates" class="three"></div>
+    <p id="denominator" class="hint" hidden>分母 = 完成三通道解析与编码的回答，包括无法判断及其他。缺失行为记为“其他”，不记为回避。</p>
+    <details id="statistics" hidden><summary>差异有多大？查看预设检验与完整记录</summary>
+      <p class="hint">预先只比较“不利 − 平稳”的负面解释率、回避率。双侧 Fisher 精确检验，两个指标用 Bonferroni 校正；校正后 p &lt; 0.05 才报告本批次支持。混合组用于描述，不要求线性梯度。</p>
+      <div id="comparison"></div>
+      <p class="hint">比例附 95% Wilson 区间。每组至少 20 次且整批完成才判断；这不是功效保证。检验假定固定设置下采样独立，仅校正本批次的两个指标，跨批次反复试到成功会增加误报。</p>
+      <div id="allRecords" class="scroll"></div>
+    </details>
+  </section>
+  <section class="panel human-reference" id="humanReference" aria-labelledby="humanReferenceTitle">
+    <div class="section-head"><h2 id="humanReferenceTitle"><span>03</span> 人类研究参考</h2><span class="reference-tag">论文汇总 · 仅供参考</span></div>
+    <p class="reference-intro">人类研究使用不同的题目、分组和计分方式。以下数值帮助理解背景，不参与本批次 Claim 判定，也不能换算成人类相似度。</p>
+    <!-- Selected published aggregates from demo_results/human_reference_summary.csv; reviewed 2026-10-21. -->
+    <div class="three">
+      <article class="reference-card">
+        <p class="reference-study">Beard &amp; Amir · 2009</p>
+        <h3>威胁解释认可率</h3>
+        <p class="reference-sample">52 名学生 · 两组各 26 人</p>
+        <div class="reference-rate"><span>非焦虑对照组</span><strong>30%</strong><div class="reference-track" aria-hidden="true"><span style="width:30%"></span></div></div>
+        <div class="reference-rate"><span>高社交焦虑组</span><strong>59%</strong><div class="reference-track" aria-hidden="true"><span style="width:59%"></span></div></div>
+        <p class="reference-note">多道社交情境中，认可预设威胁解释的个人百分比，再取组均值；不同于 Demo 单题自由回答的比例。</p>
+        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC2792932/#T2" target="_blank" rel="noopener noreferrer">原文 · Table 2 ↗</a>
+      </article>
+      <article class="reference-card">
+        <p class="reference-study">Miers 等 · 2020</p>
+        <h3>解释与回避的关联</h3>
+        <p class="reference-sample">324 人 · 18–25 岁</p>
+        <div class="reference-stat"><strong>r = 0.27</strong><span>正相关 · p &lt; 0.001</span></div>
+        <p class="reference-description">线上负面解释越多，自报的线上回避倾向也越高。</p>
+        <p class="reference-note">这里是相关系数，不是回避人数比例；相关本身不说明因果。</p>
+        <a href="https://link.springer.com/article/10.1007/s10608-020-10097-1" target="_blank" rel="noopener noreferrer">原文 · Table 1 ↗</a>
+      </article>
+      <article class="reference-card">
+        <p class="reference-study">Goldman 等 · 2025</p>
+        <h3>消息情境中的解释</h3>
+        <p class="reference-sample">60 人 · 高、低社交焦虑组各 30 人</p>
+        <p class="reference-finding">未检出明确组间差异 <span>p = 0.42</span></p>
+        <dl class="reference-scores"><div><dt>低社交焦虑组</dt><dd>−28.20</dd></div><div><dt>高社交焦虑组</dt><dd>−32.60</dd></div></dl>
+        <p class="reference-note">WhatsApp 约会对话的解释均分，量尺 −50 至 +50；越低表示认为对方越不愿继续约会。它不是百分比。</p>
+        <a href="https://link.springer.com/article/10.1007/s11031-025-10136-y" target="_blank" rel="noopener noreferrer">原文 · 解释结果 ↗</a>
+      </article>
+    </div>
+  </section>
+  <section class="panel" aria-labelledby="responseTitle">
+    <div class="section-head"><h2 id="responseTitle"><span>04</span> 回到每一次回答</h2><label class="sample-label">查看次数<select id="sample"><option value="1">第 1 次</option></select></label></div>
+    <p class="hint">内心想法是角色公开表达的简短独白。说话、行为可省略；此处行为指文字中的行动意向。</p>
+    <div id="responses" class="three"><div class="empty wide">运行后在这里逐次查看三个通道及编码依据。</div></div>
+  </section>
+
+
+    <div id="toast" role="alert" hidden></div>
+  </section>
+  <section id="view-ablation" role="tabpanel" aria-labelledby="tab-ablation" tabindex="0" hidden>
+    <div class="pane-utility"><span id="abl-connection">正在连接消融实验…</span><a href="/ablation-protocol.md" target="_blank" rel="noopener">消融实验说明 ↗</a></div>
+
+<section class="intro"><p class="eyebrow">MEMORY SOURCE × RESPONSE FORMAT</p><h1>区别来自记忆，还是提示词？</h1><p class="lead">独立的 4 × 2 对照：四种经历来源 × 两种输出格式。旧批次、原有判定规则和原有结果不变。</p>
+<div class="claim"><span>研究边界</span><p>只对单题的模型输出做描述性对比，不证明模型进入焦虑状态。MOCK 仅用于功能检查；自由叙述与三通道需要同一编码标准的人工盲复核。</p></div></section>
+<section class="panel"><div class="section-head"><h2><span>01</span>设置对照</h2><small>8 个实验格子，每格独立重复采样</small></div>
+<fieldset id="abl-configuration"><div class="inputs"><label class="wide">情境<select id="abl-scenario"></select></label><label>模型来源<select id="abl-provider"></select></label><label>每格重复<input id="abl-repeats" type="number" min="1" max="100" value="3"></label><label>运行方式<select id="abl-mode"><option value="mock">MOCK · 无费用</option><option value="live">真实 API · 可能收费</option></select></label></div>
+<blockquote id="abl-situation"></blockquote>
+<div class="ablation-grid" id="abl-materials"></div>
+<div class="inputs advanced"><label>材料版<select id="abl-variant"><option>A</option><option>B</option><option>C</option></select></label><label>角色模型 ID<input id="abl-model"></label><label>固定编码器<select id="abl-evaluator"></select></label><label>编码器模型 ID<input id="abl-evaluatorModel"></label><label>角色 MiniMax 区域<select id="abl-region"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label><label>编码器 MiniMax 区域<select id="abl-evaluatorRegion"><option value="international">国际站</option><option value="china">中国大陆站</option></select></label></div>
+<details><summary>检查实际发送给角色的 Prompt</summary><div class="inputs two"><label>记忆条件<select id="abl-previewCondition"></select></label><label>输出格式<select id="abl-previewFormat"><option value="channels">三通道</option><option value="free">自由叙述</option></select></label></div><pre id="abl-prompt"></pre></details>
+</fieldset><div class="runbar"><button id="abl-run" class="primary" disabled>运行对照</button><button id="abl-cancel" hidden>停止后续调用</button><span id="abl-progress" role="status"></span></div><p class="hint" id="abl-estimate"></p></section>
+<section class="panel"><div class="section-head"><h2><span>02</span>结果与对照</h2><div class="links"><a id="abl-csv" hidden>CSV</a><a id="abl-json" hidden>完整 JSON</a></div></div>
+<label class="batch-label">查看批次<select id="abl-batch"><option value="">尚无记录</option></select></label><p id="abl-batchContext" class="hint"></p>
+<div class="verdict" id="abl-status"><b>尚未运行</b><p>先运行 MOCK 确认流程，随后可选择真实 API 生成新数据。</p></div>
+<div class="scroll" id="abl-table"></div><div id="abl-contrasts"></div><p class="hint">表格中所有分母均为成功完成编码的试次，失败单列。负面解释定义更严格：单纯“又是已读不回”、难过、犹豫不应自动算作负面归因。旧编码结果不会自动重写。</p>
+<details><summary>逐次原文、编码依据及完整上下文</summary><div class="scroll" id="abl-records"></div></details></section>
+
+    <div id="abl-toast" role="alert" hidden></div>
+  </section>
+  <section id="view-history" role="tabpanel" aria-labelledby="tab-history" hidden tabindex="0">
+    <section class="panel">
+      <div class="section-head"><h2>历史实验</h2><button id="hist-refresh">刷新历史</button></div>
+      <p id="hist-overview" role="status">正在读取全部批次…</p><p id="hist-database" class="hint"></p>
+      <div class="inputs hist-filters">
+        <label>开始日期（北京时间）<input type="date" id="hist-from"></label><label>结束日期<input type="date" id="hist-to"></label>
+        <label>模型<select id="hist-model"><option value="">全部模型</option></select></label><label>协议<select id="hist-protocol"><option value="">全部协议</option></select></label>
+        <label>来源<select id="hist-source"><option value="">全部来源</option><option>LIVE_LLM_API</option><option>MOCK_NOT_LLM</option></select></label>
+        <label>含有此状态的批次<select id="hist-status"><option value="">全部状态</option><option value="complete">成功</option><option value="error">失败</option><option value="running">运行中／可能已中断</option><option value="cancelled">取消</option></select></label>
+      </div>
+      <p class="hint">筛选只选择批次，打开后显示整批记录；日期按批次首次记录计算。失败与 MOCK 不参与真实模型证据。</p>
+      <div class="links"><a id="hist-export-json">导出当前筛选 JSON</a><a id="hist-export-csv">导出当前筛选 CSV</a></div><div id="hist-batches" class="scroll"></div>
+    </section>
+    <section class="panel"><div class="section-head"><h2>批次详情与对照</h2><span>独立展示，不合并检验</span></div>
+      <div class="inputs two"><label>当前批次<select id="hist-selected"></select></label><label>并列对照<select id="hist-compare"><option value="">不对照</option></select></label></div>
+      <div class="hist-comparison"><div id="hist-detail"></div><div id="hist-comparison"></div></div>
+    </section>
+    <section class="panel"><details><summary>从历史 JSON 安全导入</summary>
+      <p>支持原导出中的 records 数组或纯记录数组。先预览，确认后导入；同 ID 相同内容跳过，不同内容则整份拒绝。实际写入前自动备份 SQLite。只有汇总数字不能恢复原始回答。</p>
+      <input type="file" id="hist-file" accept=".json,application/json" aria-label="历史 JSON 文件"><button id="hist-preview">预览导入</button><button id="hist-commit" disabled>确认导入已预览记录</button><pre id="hist-import-result" role="status"></pre>
+    </details></section>
+  </section>
+  <section id="view-prompts" role="tabpanel" aria-labelledby="tab-prompts" hidden tabindex="0">
+    <section class="panel"><h2>研究审计与方案</h2><p>当前证据支持特定提示条件下的输出差异，尚不能归因于焦虑状态或证明人类心理机制。旧提示和旧编码保持原样。</p>
+      <div class="links"><a href="/ablation-protocol.md">消融协议</a><a href="/mechanism-protocol.md">机制协议</a><a href="/SOURCE_MEASUREMENT_V2.md">来源测量路线</a><a href="/MVP_PROTOCOL.md">记忆注入协议</a></div>
+    </section>
+    <section class="panel"><h2>提示词版本</h2><p>方案可编辑、比较、预览并保存为独立版本，再到“来源对照 v2”刷新并选用。可运行不代表测量已验证。旧实验的实际版本、完整 Prompt 与参数在历史逐条记录中查看。</p>
+      <div class="inputs two"><label>编辑来源<select id="prompt-version"></select></label><label>比较版本<select id="prompt-compare"></select></label></div><p id="prompt-info" class="hint"></p>
+      <label>版本配置（JSON；保存时填写新的 version；修改编码规则还须更新 coder_version）<textarea id="prompt-editor" rows="18" spellcheck="false"></textarea></label>
+      <div class="runbar"><button id="prompt-preview">离线验证并预览</button><button id="prompt-save">保存为新版本</button><a id="prompt-export">导出所选版本</a></div><pre id="prompt-status" role="status"></pre>
+      <details><summary>版本差异</summary><pre id="prompt-diff"></pre></details><details><summary>展开角色与盲法编码 Prompt 预览</summary><pre id="prompt-rendered"></pre></details>
+    </section>
+  </section>
+  <footer>此工作台检验模型输出在不同实验条件下的变化，不代表已证明存在焦虑状态，也不代表与人类心理反应一致。</footer>
+</main>
+</body></html>

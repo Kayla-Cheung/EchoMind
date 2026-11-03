@@ -1,8 +1,9 @@
 @echo off
+title EchoMind
 cd /d "%~dp0"
 echo.
 echo EchoMind Context Memory Lab
-echo Open http://127.0.0.1:8768/ in your browser.
+echo Open http://127.0.0.1:8769/ in your browser.
 echo Keep this window open while using the workbench.
 echo.
 where python >nul 2>nul
