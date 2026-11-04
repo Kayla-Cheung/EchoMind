@@ -16,6 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "data" / "pilot.sqlite3"
 OUTPUT_HTML = ROOT / "EchoMind_Visual_Demo.html"
+ROOT_INDEX = ROOT / "index.html"
 DOCS_DIR = ROOT / "docs"
 DOCS_HTML = DOCS_DIR / "index.html"
 
@@ -905,7 +906,9 @@ def main():
 
     # 1. 写入根目录
     OUTPUT_HTML.write_text(html_output, encoding="utf-8")
+    ROOT_INDEX.write_text(html_output, encoding="utf-8")
     print(f"[√] 根目录演示报告已生成: {OUTPUT_HTML.resolve()}")
+    print(f"[√] 根目录 index.html 已生成: {ROOT_INDEX.resolve()}")
 
     # 2. 写入 docs/ 目录供 GitHub Pages 直接托管
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
