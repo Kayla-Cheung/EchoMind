@@ -131,7 +131,8 @@ def process_report_data(settings, trials, snapshots):
 
         for r in rows:
             cond = r.get("condition") or r.get("condition_id") or "none"
-            sc_id = r.get("scenario_id") or "S01"
+            sc_id = r.get("scenario_id") or (r.get("scenario") or {}).get("scenario_id") or "S01"
+            sc_text = (r.get("scenario") or {}).get("exact_text") or (r.get("scenario") or {}).get("situation") or ""
             c_entry = cond_stats[cond]
             c_entry["total"] += 1
             if r.get("status") == "complete":
@@ -149,14 +150,13 @@ def process_report_data(settings, trials, snapshots):
             behavior = (r.get("channels") or {}).get("behavior") or (r.get("agent_parsed") or {}).get("action") or ""
             narrative = r.get("narrative") or ""
 
-            # 解析如果未分通道，但带有文本的情况
             if not thought and narrative:
                 thought = narrative
 
             sample_item = {
                 "id": r.get("id", "")[:8],
                 "scenario_id": sc_id,
-                "scenario_text": (r.get("scenario") or {}).get("situation") or "情境描述未提供",
+                "scenario_text": sc_text,
                 "condition": cond,
                 "condition_label": condition_labels.get(cond, cond),
                 "thought": thought,
@@ -208,6 +208,18 @@ def process_report_data(settings, trials, snapshots):
             scenarios_list = json.loads((ROOT / "data" / "scenarios.json").read_text(encoding="utf-8"))
         except Exception:
             pass
+
+    # 补充 Demo 2 (memory_acquisition_v02) 的 4 个标准情境
+    acquisition_scenarios = [
+        {"id": "S1_near", "kind": "social", "situation": "今天的课程讨论中，你展示了一张新图表。两位新组员看了一会儿，主持人说先讨论下一页，还没有评价你的图表。你现在可以询问是否需要修改、继续留在讨论中，或先离开。"},
+        {"id": "S2_near", "kind": "social", "situation": "你和两位同学准备社团活动的物料清单。你发出一个整理建议，负责人回复‘我晚些时候再看’，随后讨论了场地。你可以询问清单安排、先等候回复，或告诉对方自己退出这项筹备。"},
+        {"id": "S3_far", "kind": "social", "situation": "午餐时，你端着餐盘走近两位认识的同学。他们把空椅上的包拿起，其中一人看向另一张桌子，暂时没有说话。空位仍在，你可以询问是否能坐下、稍等一下，或找另一张桌子。"},
+        {"id": "S4_control", "kind": "control", "situation": "你独自在自助打印区打印一页作业。屏幕显示‘任务处理中’，纸还没出来；旁边一台机器空闲。你可以查看任务状态、继续等候，或取消任务改天再来。现场没有其他人与你互动。"}
+    ]
+    existing_ids = {s.get("id") or s.get("scenario_id") for s in scenarios_list}
+    for asc in acquisition_scenarios:
+        if asc["id"] not in existing_ids:
+            scenarios_list.append(asc)
 
     # 规范化的记忆注入原材料库（中性 vs 负性）
     memory_materials = {
@@ -996,6 +1008,16 @@ const DATA = {json_payload};
 let currentBatchId = DATA.batches[0]?.id || "";
 let selectedMemoryKey = "negative_direct";
 
+function escapeHtml(str) {{
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}}
+
 function init() {{
   // 1. 初始化批次选择下拉框
   const select = document.getElementById("batchSelect");
@@ -1008,15 +1030,9 @@ function init() {{
     renderAllViews();
   }};
 
-  // 2. 初始化情境选择下拉框 (同题对照)
-  const scSelect = document.getElementById("scenarioSelector");
-  const scenarios = DATA.prompt_inspector.scenarios;
-  scSelect.innerHTML = scenarios.map((sc, idx) => 
-    `<option value="${{sc.id}}">${{sc.id}} · ${{sc.kind === 'social' ? '社交情境' : '日常情境'}} - ${{sc.situation.slice(0, 32)}}...</option>`
-  ).join("");
-  scSelect.onchange = renderCaseComparison;
+  document.getElementById("scenarioSelector").onchange = renderCaseComparison;
 
-  // 3. 渲染各个模块
+  // 渲染各个模块
   renderAllViews();
   renderPromptsView();
 }}
@@ -1028,8 +1044,44 @@ function switchTab(tabId) {{
   event.currentTarget.classList.add("active");
 }}
 
+function updateScenarioDropdown() {{
+  const scSelect = document.getElementById("scenarioSelector");
+  const detail = DATA.batch_details[currentBatchId];
+  if (!detail || !detail.case_comparisons) {{
+    scSelect.innerHTML = '<option value="">(当前批次无情境数据)</option>';
+    return;
+  }}
+
+  const availableScIds = Object.keys(detail.case_comparisons);
+  if (!availableScIds.length) {{
+    scSelect.innerHTML = '<option value="">(当前批次无情境数据)</option>';
+    return;
+  }}
+
+  const prev = scSelect.value;
+  scSelect.innerHTML = availableScIds.map(scId => {{
+    let text = "";
+    const condKeys = Object.keys(detail.case_comparisons[scId]);
+    if (condKeys.length && detail.case_comparisons[scId][condKeys[0]]?.length) {{
+      text = detail.case_comparisons[scId][condKeys[0]][0].scenario_text || "";
+    }}
+    if (!text) {{
+      const matchObj = DATA.prompt_inspector.scenarios.find(s => (s.id || s.scenario_id) === scId);
+      text = matchObj?.situation || matchObj?.exact_text || scId;
+    }}
+    return `<option value="${{scId}}">${{scId}} · ${{escapeHtml(text.slice(0, 36))}}...</option>`;
+  }}).join("");
+
+  if (availableScIds.includes(prev)) {{
+    scSelect.value = prev;
+  }} else {{
+    scSelect.value = availableScIds[0];
+  }}
+}}
+
 function renderAllViews() {{
   renderBatchMeta();
+  updateScenarioDropdown();
   renderCaseComparison();
   renderCharts();
   renderExplorer();
@@ -1043,10 +1095,6 @@ function renderBatchMeta() {{
 
 // ==================== 渲染 TAB 1: 同题对照 (CASE COMPARISON) ====================
 function renderCaseComparison() {{
-  const scId = document.getElementById("scenarioSelector").value || "S01";
-  const scenarioObj = DATA.prompt_inspector.scenarios.find(s => s.id === scId) || {{ situation: "情境描述未找到" }};
-  document.getElementById("scenarioCurrentText").textContent = scenarioObj.situation;
-
   const detail = DATA.batch_details[currentBatchId];
   const container = document.getElementById("comparisonCardsGrid");
 
@@ -1055,61 +1103,77 @@ function renderCaseComparison() {{
     return;
   }}
 
-  const condMap = detail.case_comparisons[scId] || {{}};
+  const scId = document.getElementById("scenarioSelector").value;
+  const condMap = detail.case_comparisons[scId];
+  if (!condMap || !Object.keys(condMap).length) {{
+    container.innerHTML = "<p style='color:var(--text-muted); padding:20px 0;'>该情境在当前批次中无可用对照数据。</p>";
+    return;
+  }}
 
-  // 挑选有代表性的三组对比：Baseline, 中性记忆, 负性记忆
-  const displayGroups = [
-    {{ key: "none", fallback: "baseline", title: "1. 无附加记忆 (Baseline)", class: "is-baseline" }},
-    {{ key: "neutral_direct", fallback: "neutral_daily", title: "2. 注入中性日常经历 (Neutral)", class: "is-neutral" }},
-    {{ key: "negative_direct", fallback: "negative_social", title: "3. 注入负性排斥经历 (Negative)", class: "is-negative" }},
-    {{ key: "negative_interactive", fallback: "state_moderate", title: "4. 注入深度双轮交互 (Interactive)", class: "is-negative" }}
-  ];
+  const firstCond = Object.keys(condMap)[0];
+  const firstTrial = condMap[firstCond]?.[0];
+  let curScenarioText = firstTrial?.scenario_text || "";
+  if (!curScenarioText) {{
+    const matchObj = DATA.prompt_inspector.scenarios.find(s => (s.id || s.scenario_id) === scId);
+    curScenarioText = matchObj?.situation || matchObj?.exact_text || "情境文本";
+  }}
+  document.getElementById("scenarioCurrentText").textContent = curScenarioText;
 
-  container.innerHTML = displayGroups.map(grp => {{
-    const trials = condMap[grp.key] || condMap[grp.fallback] || [];
-    const t = trials[0]; // 提取一条最具代表性的试次
+  const availableConds = Object.keys(condMap);
+  const orderRank = (c) => {{
+    if (c === "none" || c === "baseline" || c === "state_none") return 1;
+    if (c.startsWith("neutral_") || c === "positive_social" || c === "neutral_daily" || c === "state_mild") return 2;
+    if (c.startsWith("negative_") || c === "negative_social" || c === "state_moderate") return 3;
+    return 4;
+  }};
+  availableConds.sort((a, b) => orderRank(a) - orderRank(b));
 
-    if (!t) {{
-      return `
-        <div class="case-card ${{grp.class}}">
-          <div class="case-card-header"><span class="case-title">${{grp.title}}</span></div>
-          <p style="color:var(--text-muted); font-size:0.88rem; padding: 20px 0;">当前批次未包含该特定对照组数据</p>
-        </div>
-      `;
+  container.innerHTML = availableConds.map(condKey => {{
+    const trials = condMap[condKey] || [];
+    const t = trials[0];
+    if (!t) return "";
+
+    const isNeg = condKey.includes("negative") || t.interpretation === "negative";
+    const isNeu = condKey.includes("neutral") || condKey.includes("positive") || t.interpretation === "neutral";
+    const cardClass = isNeg ? "is-negative" : isNeu ? "is-neutral" : "is-baseline";
+
+    let memorySnippet = DATA.prompt_inspector.memory_materials[condKey]?.text;
+    if (!memorySnippet) {{
+      if (t.role_messages && t.role_messages.length > 1) {{
+        memorySnippet = t.role_messages[1].content;
+      }} else {{
+        memorySnippet = "（无附加前置经历）";
+      }}
     }}
 
-    const memorySnippet = DATA.prompt_inspector.memory_materials[grp.key]?.text || 
-                          DATA.prompt_inspector.memory_materials[grp.fallback]?.text || 
-                          "（无附加前置自传式经历）";
-
     return `
-      <div class="case-card ${{grp.class}}">
+      <div class="case-card ${{cardClass}}">
         <div class="case-card-header">
-          <span class="case-title">${{grp.title}}</span>
+          <span class="case-title">${{escapeHtml(t.condition_label || condKey)}}</span>
           <span class="tag tag-${{t.interpretation}}">${{t.interpretation}}</span>
         </div>
 
         <div class="case-section-title">注入的前置经历记忆：</div>
-        <div class="case-injected-box">${{memorySnippet}}</div>
+        <div class="case-injected-box">${{escapeHtml(memorySnippet)}}</div>
 
         <div class="case-section-title">模型的第一人称三通道反应：</div>
         
         ${{t.thought ? `
           <div class="bubble bubble-thought">
             <div class="bubble-label label-thought">🧠 内心想法 (Thought)</div>
-            ${{t.thought}}
+            ${{escapeHtml(t.thought)}}
           </div>` : ''}}
 
         ${{t.speech ? `
           <div class="bubble bubble-speech">
             <div class="bubble-label label-speech">💬 公开说话 (Speech)</div>
-            ${{t.speech}}
+            ${{escapeHtml(t.speech)}}
           </div>` : ''}}
 
         ${{t.behavior ? `
           <div class="bubble bubble-behavior">
             <div class="bubble-label label-behavior">🚶 行为意向 (Action)</div>
-            ${{t.behavior}}
+            ${{escapeHtml(t.behavior)}}
           </div>` : ''}}
 
         <div class="judge-panel">
@@ -1117,7 +1181,7 @@ function renderCaseComparison() {{
             <span class="tag tag-${{t.interpretation}}">归因: ${{t.interpretation}}</span>
             <span class="tag tag-${{t.action === 'avoid' ? 'avoid' : 'approach'}}">行动: ${{t.action}}</span>
           </div>
-          <div class="judge-reason"><strong>打标引证理由：</strong>${{t.reason || '依据规则自动分类'}}</div>
+          <div class="judge-reason"><strong>打标引证理由：</strong>${{escapeHtml(t.reason || '依据规则自动分类')}}</div>
         </div>
       </div>
     `;
