@@ -1,5 +1,12 @@
 # EchoMind
 
+
+## 研究进度：2026-11-08（v0.3 / v0.4）
+
+已完成两轮**本地探索性**实验：v0.3 Prompt Framing（28 组 P0/P1 配对，56 条 REAL 决策）及 v0.4 Temporal Context（24 组 T1/T2 配对，另有 4 条无记忆基线，共 52 条 REAL 决策）。发现提示措辞影响旧版 Coder 标签，时间提示可能影响记忆引用与非社交场景的过度迁移；但**尚无同任务、同量尺的人类实验基线，不能声称已提高 Human Behavioral Fidelity**。详细方法、结果、限制及下一阶段见 [研究进度报告（2026-11-08）](RESEARCH_PROGRESS_2026-11-08.md)。
+
+**注意：** GitHub 当前代码尚未同步独立本地 v0.3/v0.4 实验版本；上面的进度不表示此分支能够直接复现实验。
+
 > 🌐 **交互式演示网页（开箱即看）**：
 > - **在线直接浏览**：[点击访问 GitHub Pages 在线展示](https://kayla-cheung.github.io/EchoMind/)
 > - **本地双击直达**：双击本目录下的 [`EchoMind_Visual_Demo.html`](EchoMind_Visual_Demo.html) 即可离线交互查看全量结果分布、提示词全貌与模型原始回答。
