@@ -3,56 +3,59 @@
   "project": "EchoMind",
   "experiment": "v0.5-human-rr",
   "status_scope": "public_sanitized_checkpoint",
-  "state": "awaiting_first_agy_checkpoint",
-  "last_updated_utc": null,
-  "source": "initial_placeholder_not_verified_against_local_AGY",
-  "last_verified_by": null,
+  "state": "verifying",
+  "last_updated_utc": "2026-11-14T10:15:19Z",
+  "source": "local_agy_audit",
+  "last_verified_by": "AGY-local-audit",
   "real_pilot": {
     "batch_id": null,
-    "status": "unknown",
+    "status": "not_started",
     "condition_status": {
-      "C0": "unknown",
-      "C1": "unknown",
-      "C2": "unknown",
-      "C3": "unknown",
-      "C4": "unknown",
-      "C5": "unknown",
-      "C6": "unknown"
+      "C0": "not_started",
+      "C1": "not_started",
+      "C2": "not_started",
+      "C3": "not_started",
+      "C4": "not_started",
+      "C5": "not_started",
+      "C6": "not_started"
     },
     "target_episodes": 7,
-    "completed_episodes": null,
+    "completed_episodes": 0,
     "target_rr_ratings": 252,
-    "valid_rr_ratings": null,
-    "api_request_count": null,
-    "cumulative_estimated_cost_usd": null,
+    "valid_rr_ratings": 0,
+    "api_request_count": 0,
+    "cumulative_estimated_cost_usd": 0.0,
     "authorized_cost_ceiling_usd": 0.05,
-    "cost_reconciled": false,
+    "cost_reconciled": true,
     "returned_model_id": null
   },
   "verification": {
     "tests": {
-      "passed": null,
-      "failed": null,
-      "environment": null,
-      "evidence": null
+      "passed": 91,
+      "failed": 0,
+      "environment": "win32 Python 3.13.9 pytest-8.4.2",
+      "evidence": "91/91 unit/protocol tests passing (46.47s), including 6/6 test_rr_v05.py protocol tests"
     },
     "workbench": {
-      "backend_verified": null,
-      "frontend_assets_verified": null,
-      "browser_visual_verified": null
+      "backend_verified": true,
+      "frontend_assets_verified": true,
+      "browser_visual_verified": false
     },
     "human_reference": {
       "baseline_stage": "preTest",
-      "verified_by_AGY": null
+      "verified_by_AGY": true
     }
   },
   "github_delivery": {
     "v05_code_branch": "experiment/v05-human-rr",
-    "v05_code_branch_pushed": null,
+    "v05_code_branch_pushed": false,
     "v05_draft_pr_url": null
   },
-  "blockers": [],
-  "next_action": "AGY: inspect existing local processes, SQLite and prior REAL batch before any new paid request; publish a sanitized, evidence-backed checkpoint.",
+  "blockers": [
+    "REAL Pilot has not yet been run; requires explicit user authorization before initiating paid DeepSeek API calls under the USD 0.05 ceiling.",
+    "Automated browser visual test for v0.5 UI is not yet integrated into the test runner."
+  ],
+  "next_action": "Awaiting explicit user authorization and confirmation of remaining budget to execute the 7-condition REAL Pilot (deepseek-flash, ceiling USD 0.05) and push experiment/v05-human-rr code branch.",
   "worklog_path": "coordination/AGENT_WORKLOG.md",
-  "notes": "No local AGY session or REAL result has been read by this GitHub bridge. Null means unknown, not zero."
+  "notes": "First verified local checkpoint by AGY. Confirmed 91/91 tests pass, SQLite DB initialized with 0 prior batches/requests ($0.00 spent), workbench HTTP backend running on 127.0.0.1:8780. No API calls or experiment runs were performed during this synchronization task."
 }
