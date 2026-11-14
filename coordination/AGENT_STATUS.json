@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "project": "EchoMind",
+  "experiment": "v0.5-human-rr",
+  "status_scope": "public_sanitized_checkpoint",
+  "state": "awaiting_first_agy_checkpoint",
+  "last_updated_utc": null,
+  "source": "initial_placeholder_not_verified_against_local_AGY",
+  "last_verified_by": null,
+  "real_pilot": {
+    "batch_id": null,
+    "status": "unknown",
+    "condition_status": {
+      "C0": "unknown",
+      "C1": "unknown",
+      "C2": "unknown",
+      "C3": "unknown",
+      "C4": "unknown",
+      "C5": "unknown",
+      "C6": "unknown"
+    },
+    "target_episodes": 7,
+    "completed_episodes": null,
+    "target_rr_ratings": 252,
+    "valid_rr_ratings": null,
+    "api_request_count": null,
+    "cumulative_estimated_cost_usd": null,
+    "authorized_cost_ceiling_usd": 0.05,
+    "cost_reconciled": false,
+    "returned_model_id": null
+  },
+  "verification": {
+    "tests": {
+      "passed": null,
+      "failed": null,
+      "environment": null,
+      "evidence": null
+    },
+    "workbench": {
+      "backend_verified": null,
+      "frontend_assets_verified": null,
+      "browser_visual_verified": null
+    },
+    "human_reference": {
+      "baseline_stage": "preTest",
+      "verified_by_AGY": null
+    }
+  },
+  "github_delivery": {
+    "v05_code_branch": "experiment/v05-human-rr",
+    "v05_code_branch_pushed": null,
+    "v05_draft_pr_url": null
+  },
+  "blockers": [],
+  "next_action": "AGY: inspect existing local processes, SQLite and prior REAL batch before any new paid request; publish a sanitized, evidence-backed checkpoint.",
+  "worklog_path": "coordination/AGENT_WORKLOG.md",
+  "notes": "No local AGY session or REAL result has been read by this GitHub bridge. Null means unknown, not zero."
+}
