@@ -12,7 +12,7 @@ from prompts import SCHEMA
 
 
 def offline_mode():
-    return os.getenv("SOS_OFFLINE") == "1"
+    return os.getenv("ECHOMIND_OFFLINE") == "1"
 
 
 class ProviderError(RuntimeError):
@@ -112,18 +112,21 @@ def endpoint(spec):
     return base.rstrip("/") + ("/responses" if d["api"] == "responses" else "/chat/completions")
 
 
-def build_request(spec, messages, *, evaluator=False):
+def build_request(spec, messages, *, evaluator=False, coding_schema=None, max_output_tokens=None):
     if not isinstance(messages, list) or not messages:
         raise ValueError("消息不能为空")
+    output_limit = max_output_tokens if max_output_tokens is not None else (1200 if evaluator else 1800)
+    if isinstance(output_limit, bool) or not isinstance(output_limit, int) or not 1 <= output_limit <= 384_000:
+        raise ValueError("max_output_tokens must be an integer from 1 to 384000")
     if spec.provider == "openai":
-        body = {"model": spec.model, "input": messages, "store": False, "max_output_tokens": 1200 if evaluator else 1800}
+        body = {"model": spec.model, "input": messages, "store": False, "max_output_tokens": output_limit}
         if spec.reasoning_effort is not None:
             body["reasoning"] = {"effort": spec.reasoning_effort}
         if evaluator:
-            body["text"] = {"format": {"type": "json_schema", "name": "blind_coding", "strict": True, "schema": SCHEMA}}
+            body["text"] = {"format": {"type": "json_schema", "name": "blind_coding", "strict": True, "schema": coding_schema if coding_schema is not None else SCHEMA}}
     else:
         body = {"model": spec.model, "messages": messages, "stream": False,
-                ("max_tokens" if spec.provider == "deepseek" else "max_completion_tokens"): 1200 if evaluator else 1800}
+                ("max_tokens" if spec.provider == "deepseek" else "max_completion_tokens"): output_limit}
         if spec.provider in ("deepseek", "mimo") and spec.thinking:
             body["thinking"] = {"type": spec.thinking}
         if evaluator and spec.provider == "deepseek":
@@ -160,7 +163,19 @@ def extract_final(spec, response):
     return final
 
 
-def call(spec, messages, *, evaluator=False, timeout=45, attempts=3, transport=None):
+def raw_public_parts(spec, response):
+    """Preserve returned final-channel text before legacy whitespace normalization."""
+    if spec.provider == "openai":
+        return [c.get("text", "") for item in response.get("output", []) if item.get("type") == "message"
+                for c in item.get("content", []) if c.get("type") == "output_text"]
+    content = (((response.get("choices") or [{}])[0].get("message") or {}).get("content"))
+    if isinstance(content, str):
+        return [content]
+    return [x.get("text", "") for x in content if x.get("type") == "text"] if isinstance(content, list) else []
+
+
+def call(spec, messages, *, evaluator=False, timeout=45, attempts=3, transport=None, coding_schema=None,
+         audit=None, max_output_tokens=None):
     if not 5 <= timeout <= 120 or not 1 <= attempts <= 5:
         raise ValueError("超时或重试参数无效")
     if offline_mode() and transport is None:
@@ -169,10 +184,15 @@ def call(spec, messages, *, evaluator=False, timeout=45, attempts=3, transport=N
     key = "" if transport is not None else os.getenv(PROVIDERS[spec.provider]["env"], "").strip()
     if not key and transport is None:
         raise ProviderError(f"{PROVIDERS[spec.provider]['env']} 未配置", "authentication")
-    body, url = build_request(spec, messages, evaluator=evaluator), endpoint(spec)
+    body = build_request(spec, messages, evaluator=evaluator, coding_schema=coding_schema,
+                         max_output_tokens=max_output_tokens)
+    url = endpoint(spec)
     last = None
     total_began = time.monotonic()
     for index in range(attempts):
+        data = None
+        if audit:
+            audit({"event": "request", "attempt": index + 1, "body": body, "endpoint": url})
         try:
             if transport is not None:
                 data = transport(url, body, timeout)
@@ -182,23 +202,46 @@ def call(spec, messages, *, evaluator=False, timeout=45, attempts=3, transport=N
                 with urllib.request.urlopen(req, timeout=timeout) as res:
                     data = json.load(res)
             final = extract_final(spec, data)
-            return final, {"response_id": data.get("id"), "usage": data.get("usage") or {},
+            meta = {"response_id": data.get("id"), "usage": data.get("usage") or {},
+                "raw_public_parts": raw_public_parts(spec, data),
                 "response_model": data.get("model"), "latency_ms": round((time.monotonic() - total_began) * 1000),
                 "attempts": index + 1, "sent_parameters": {k: v for k, v in body.items() if k not in ("input", "messages")},
-                "endpoint": url}
+                "endpoint": url, "system_fingerprint": data.get("system_fingerprint")}
+            if audit:
+                audit({"event": "response", "attempt": index + 1, "public_response": final, "meta": meta})
+            return final, meta
         except urllib.error.HTTPError as exc:
             # Provider error bodies can echo credentials or request contents.
             # Keep structured HTTP diagnostics without persisting those bodies.
             kind = "authentication" if exc.code in (401, 403) else "rate_limit" if exc.code == 429 else "http"
             last = ProviderError(f"{spec.provider} HTTP {exc.code}", kind, exc.code, index + 1)
             if exc.code not in (429, 500, 502, 503, 504):
-                break
+                if audit:
+                    audit({"event": "error", "attempt": index + 1, "error": str(last), "error_meta": last.meta})
+                raise last
         except (urllib.error.URLError, TimeoutError) as exc:
             last = ProviderError(f"{spec.provider} 连接或超时失败", "transport", attempts=index + 1)
+        except ProviderError:
+            raise
         except Exception as exc:
             detail = str(exc).replace(key, "[REDACTED]") if key else str(exc)
             last = ProviderError(detail[:350], "response", attempts=index + 1)
-            break
+            if isinstance(data, dict):
+                # Retain returned final-channel text and usage on incomplete output;
+                # never save hidden reasoning fields or a provider HTTP error body.
+                if spec.provider == "openai":
+                    visible = "\n".join(c.get("text", "") for item in data.get("output", []) if item.get("type") == "message"
+                                        for c in item.get("content", []) if c.get("type") == "output_text")
+                else:
+                    visible = (((data.get("choices") or [{}])[0].get("message") or {}).get("content"))
+                last.meta.update(usage=data.get("usage") or {}, response_model=data.get("model"),
+                                 raw_public_parts=raw_public_parts(spec, data),
+                                 public_response=re.sub(r"<think>.*?</think>", "", visible, flags=re.DOTALL | re.IGNORECASE).strip() if isinstance(visible, str) else None)
+            if audit:
+                audit({"event": "error", "attempt": index + 1, "error": str(last), "error_meta": last.meta})
+            raise last
+        if audit:
+            audit({"event": "error", "attempt": index + 1, "error": str(last), "error_meta": last.meta})
         if index + 1 < attempts:
             time.sleep(min(2 ** index, 4))
     raise last
