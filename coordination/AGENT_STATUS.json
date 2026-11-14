@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "project": "EchoMind",
+  "experiment": "v0.5-human-rr",
+  "status_scope": "public_sanitized_checkpoint",
+  "state": "complete",
+  "last_updated_utc": "2026-11-14T10:34:48Z",
+  "source": "local_agy_audit",
+  "last_verified_by": "AGY-local-audit",
+  "real_pilot": {
+    "batch_id": "rrv05_20261114T103014Z_69ca2c7d",
+    "status": "completed",
+    "condition_status": {
+      "C0": "completed",
+      "C1": "completed",
+      "C2": "completed",
+      "C3": "completed",
+      "C4": "completed",
+      "C5": "completed",
+      "C6": "completed"
+    },
+    "target_episodes": 7,
+    "completed_episodes": 7,
+    "target_rr_ratings": 252,
+    "valid_rr_ratings": 252,
+    "api_request_count": 15,
+    "cumulative_estimated_cost_usd": 0.007544064,
+    "authorized_cost_ceiling_usd": 0.05,
+    "cost_reconciled": true,
+    "returned_model_id": "deepseek-flash"
+  },
+  "verification": {
+    "tests": {
+      "passed": 91,
+      "failed": 0,
+      "environment": "win32 Python 3.13.9 pytest-8.4.2",
+      "evidence": "91/91 unit/protocol tests passing (48.76s) after rr_v05.py story ID fix"
+    },
+    "workbench": {
+      "backend_verified": true,
+      "frontend_assets_verified": true,
+      "browser_visual_verified": false
+    },
+    "human_reference": {
+      "baseline_stage": "preTest",
+      "verified_by_AGY": true
+    }
+  },
+  "github_delivery": {
+    "v05_code_branch": "experiment/v05-human-rr",
+    "v05_code_branch_pushed": true,
+    "v05_draft_pr_url": "https://github.com/Kayla-Cheung/EchoMind/pull/7"
+  },
+  "blockers": [
+    "Automated browser visual test for v0.5 UI is not yet integrated into the test runner.",
+    "With n=1 episode per condition, results are descriptive pipeline outputs only and cannot support population-level Human Fidelity claims."
+  ],
+  "next_action": "Human review of Draft PR #7 (experiment/v05-human-rr), Draft PR #4 (coordination bridge), and descriptive pilot results before any further runs.",
+  "worklog_path": "coordination/AGENT_WORKLOG.md",
+  "notes": "Completed bounded 7-condition REAL pilot (batch rrv05_20261114T103014Z_69ca2c7d) after fixing missing story IDs in encoding_messages. 15 total requests (1 prior failed attempt + 14 valid requests), cumulative conservative cost USD 0.007544064 (remaining USD 0.042455936 from USD 0.05 ceiling). All 252 integer 1-4 ratings persisted and verified."
+}

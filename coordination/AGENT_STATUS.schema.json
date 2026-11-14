@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EchoMind public AGY status checkpoint",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "project",
+    "experiment",
+    "status_scope",
+    "state",
+    "last_updated_utc",
+    "source",
+    "real_pilot",
+    "verification",
+    "github_delivery",
+    "blockers",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "project": {
+      "const": "EchoMind"
+    },
+    "experiment": {
+      "type": "string"
+    },
+    "status_scope": {
+      "const": "public_sanitized_checkpoint"
+    },
+    "state": {
+      "enum": [
+        "awaiting_first_agy_checkpoint",
+        "recovering",
+        "verifying",
+        "running_real",
+        "analyzing",
+        "preparing_delivery",
+        "blocked",
+        "partially_complete",
+        "complete"
+      ]
+    },
+    "last_updated_utc": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "last_verified_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "real_pilot": {
+      "type": "object",
+      "required": [
+        "batch_id",
+        "status",
+        "condition_status",
+        "target_episodes",
+        "completed_episodes",
+        "target_rr_ratings",
+        "valid_rr_ratings",
+        "api_request_count",
+        "cumulative_estimated_cost_usd",
+        "authorized_cost_ceiling_usd",
+        "cost_reconciled"
+      ],
+      "properties": {
+        "batch_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "unknown",
+            "not_started",
+            "running",
+            "partial",
+            "completed",
+            "failed",
+            "blocked"
+          ]
+        },
+        "condition_status": {
+          "type": "object",
+          "required": [
+            "C0",
+            "C1",
+            "C2",
+            "C3",
+            "C4",
+            "C5",
+            "C6"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "C0": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C1": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C2": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C3": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C4": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C5": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            },
+            "C6": {
+              "enum": [
+                "unknown",
+                "not_started",
+                "running",
+                "completed",
+                "failed",
+                "blocked"
+              ]
+            }
+          }
+        },
+        "target_episodes": {
+          "const": 7
+        },
+        "completed_episodes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 7
+        },
+        "target_rr_ratings": {
+          "const": 252
+        },
+        "valid_rr_ratings": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 252
+        },
+        "api_request_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "cumulative_estimated_cost_usd": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "authorized_cost_ceiling_usd": {
+          "const": 0.05
+        },
+        "cost_reconciled": {
+          "type": "boolean"
+        },
+        "returned_model_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "verification": {
+      "type": "object"
+    },
+    "github_delivery": {
+      "type": "object"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "worklog_path": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
