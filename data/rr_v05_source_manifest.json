@@ -1,0 +1,32 @@
+{
+  "protocol": "human_rr_v05",
+  "source_stimuli": {
+    "title": "Calm Thinking measures v4.2 — Recognition Ratings",
+    "url": "https://osf.io/download/5pcsb/",
+    "sha256": "76e6a0736f58d8b3bc36bf5fe811576b0d1a4400cffa32d1ceb2766ce20b91ae",
+    "verified_sections": ["nine English scenarios", "nine comprehension questions", "36 English interpretations", "source order", "1–4 similarity scale"],
+    "redistribution": "not included: the OSF materials node reports no explicit node license"
+  },
+  "human_reference": {
+    "table": "rr.csv",
+    "source_project": "TeachmanLab MT-Data-CalmThinkingStudy",
+    "rows": 3259,
+    "columns": 45,
+    "pretest_rows": 1524,
+    "rating_columns": 36,
+    "missing_code": 555,
+    "redistribution": "participant-level rows are not included; only local aggregate distributions may be exported"
+  },
+  "column_suffixes": {
+    "nf": "negative foil",
+    "ns": "negative target/specific",
+    "pf": "positive foil",
+    "ps": "positive target/specific"
+  },
+  "ordering": ["elevator", "wedding", "job", "noise", "meeting_friend", "lunch", "scrape", "shopping", "blood_test"],
+  "categories": {
+    "social": ["wedding", "meeting_friend", "lunch"],
+    "physical_health": ["scrape", "shopping", "blood_test"],
+    "other_threat": ["elevator", "job", "noise"]
+  }
+}
