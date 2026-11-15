@@ -13,12 +13,15 @@ All times use Asia/Shanghai unless marked UTC.
 - Added v0.5 protocol/persistence/cost code, bounded REAL runner, private source loader, local workbench, exports, and protocol tests.
 - Pricing source checked: DeepSeek official pricing page, 2026-11-14. `deepseek-flash` was listed as serving DeepSeek-V4.1-Flash-1017; peak cache-miss input USD 0.30/M and peak output USD 1.20/M were used for the guard.
 
-### Pending verification entries
+### Verification & REAL Pilot Checkpoint (2026-11-14T10:34:48Z)
 
-- Static/unit/protocol test result: pending.
-- Prompt/UI preview result: pending.
-- REAL batch ID, returned model, usage, cost, and primary distance: pending.
-- Secret scan, diff review, commit, push, and draft PR: pending.
+- Static/unit/protocol test result: 91/91 tests passed via `pytest` 8.4.2 on win32 Python 3.13.9 (48.76s) after `rr_v05.py` story ID fix.
+- Prompt/UI preview result: backend endpoints (`/api/health`, `/api/status`, `/api/results`, `/api/export/ratings.csv`, `/api/export/raw.json`) verified HTTP 200; automated browser visual test remains pending integration into test runner.
+- REAL batch ID, returned model, usage, cost, and primary distance:
+  - Prior failed attempt `rrv05_20261114T102854Z_ef084f2f`: 1 invalid encoding request (`deepseek-flash`, conservative cost USD 0.00029070).
+  - Completed bounded pilot `rrv05_20261114T103014Z_69ca2c7d`: 7/7 complete episodes (C0–C6), 14/14 valid requests (`deepseek-flash`), 252/252 integer 1–4 ratings; cumulative conservative cost USD 0.007544064 across both batches (remaining USD 0.042455936 from USD 0.05 ceiling).
+  - Descriptive preliminary `primary_social_target` ordinal Wasserstein distances (`n=1` episode per condition vs. held-out `preTest` N=270..273): `none`=0.9973, `neutral_direct`=0.9402, `negative_direct`=0.9067, `neutral_transcript`=0.8236, `negative_transcript`=0.8236, `neutral_interactive`=0.8511, `negative_interactive`=0.8236.
+- Secret scan, diff review, commit, push, and draft PR: clean branch `experiment/v05-human-rr` pushed (commit `e92b512`, 15 public-safe files) and Draft PR #7 opened (`https://github.com/Kayla-Cheung/EchoMind/pull/7`).
 
 ### Local website access repair
 
