@@ -1,0 +1,10 @@
+private_inputs/
+private_exports/
+data/*.sqlite*
+*.log
+*.jsonl
+.env*
+__pycache__/
+.pytest_cache/
+local_paths.json
+

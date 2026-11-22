@@ -6,7 +6,7 @@ import {resolve,join,sep} from 'node:path';
 import {createServer} from 'node:net';
 import assert from 'node:assert/strict';
 const root=resolve(import.meta.dirname,'..');
-const scratch=await mkdtemp(join(tmpdir(),'sos-mechanism-ui-'));
+const scratch=await mkdtemp(join(tmpdir(),'echomind-mechanism-ui-'));
 const socket=createServer();await new Promise(r=>socket.listen(0,'127.0.0.1',r));
 const port=socket.address().port;await new Promise(r=>socket.close(r));
 let backend,browser,ws;
@@ -17,8 +17,8 @@ async function until(fn,limit=20000) {
   throw Error('UI timeout');
 }
 try {
-  backend=spawn('python',['-u','server.py','--port',String(port)],{
-    cwd:root,env:{...process.env,SOS_PILOT_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'
+  backend=spawn('python',['-u','server.py','--offline','--port',String(port)],{
+    cwd:root,env:{...process.env,ECHOMIND_OFFLINE:'1',ECHOMIND_PILOT_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'
   });
   const url=`http://127.0.0.1:${port}`;
   await until(async()=> (await fetch(url+'/api/mechanism/bootstrap')).ok);
@@ -44,11 +44,11 @@ try {
   }
   await cdp('Runtime.enable');await cdp('Page.enable');
   await cdp('Emulation.setDeviceMetricsOverride',{width:1440,height:1100,deviceScaleFactor:1,mobile:false});
-  await cdp('Page.navigate',{url});
+  await cdp('Page.navigate',{url:url+'/#mechanism'});
   await until(()=>evaluate("document.querySelector('#connection')?.textContent==='本地服务已连接'"));
   await until(()=>evaluate("!document.querySelector('#run').disabled"));
   assert.equal(await evaluate("document.querySelector('#repeats').value"),'20');
-  assert.equal(await evaluate("document.querySelectorAll('.condition').length"),3);
+  assert.equal(await evaluate("document.querySelectorAll('#view-mechanism .condition').length"),3);
   await until(()=>evaluate("document.querySelector('#prompt').textContent.includes('内心想法')"));
   assert.equal(await evaluate("/目标无焦虑|目标轻度|目标中度|state_none/.test(document.querySelector('#prompt').textContent)"),false);
   assert.match(await evaluate("document.querySelector('#estimate').textContent"),/60 个 MOCK/);

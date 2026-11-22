@@ -1,0 +1,647 @@
+{
+  "calm": {
+    "rr_shape": [
+      3259,
+      45
+    ],
+    "unique_participants": 1524,
+    "rating_columns": [
+      "blood_test_nf",
+      "blood_test_ns",
+      "blood_test_pf",
+      "blood_test_ps",
+      "elevator_nf",
+      "elevator_ns",
+      "elevator_pf",
+      "elevator_ps",
+      "job_nf",
+      "job_ns",
+      "job_pf",
+      "job_ps",
+      "lunch_nf",
+      "lunch_ns",
+      "lunch_pf",
+      "lunch_ps",
+      "meeting_friend_nf",
+      "meeting_friend_ns",
+      "meeting_friend_pf",
+      "meeting_friend_ps",
+      "noise_nf",
+      "noise_ns",
+      "noise_pf",
+      "noise_ps",
+      "scrape_nf",
+      "scrape_ns",
+      "scrape_pf",
+      "scrape_ps",
+      "shopping_nf",
+      "shopping_ns",
+      "shopping_pf",
+      "shopping_ps",
+      "wedding_nf",
+      "wedding_ns",
+      "wedding_pf",
+      "wedding_ps"
+    ],
+    "rating_cells": 117324,
+    "value_counts": {
+      "1": 35686,
+      "2": 31504,
+      "3": 32356,
+      "4": 17017,
+      "555": 761
+    },
+    "missing_value_code": 555,
+    "explicit_nan_rating_cells": 0,
+    "session_counts": {
+      "preTest": 1524,
+      "thirdSession": 693,
+      "fifthSession": 558,
+      "PostFollowUp": 484
+    },
+    "duplicate_person_session_rows": 0,
+    "codebook_mapping_complete": true,
+    "baseline_alpha": {
+      "ns": {
+        "complete_cases": 1501,
+        "alpha": 0.7586532714797293
+      },
+      "ps": {
+        "complete_cases": 1499,
+        "alpha": 0.7178457257674699
+      }
+    },
+    "reproduction_scope": "Independent descriptive checks and complete-case alpha on available baseline rows; not the published ITT mixed-model or imputation pipeline.",
+    "task_log": {
+      "shape": [
+        98943,
+        21
+      ],
+      "unique_participants": 1567,
+      "trial_types": {
+        "missing-letters": 31810,
+        "button-response-correct": 31810,
+        "call-function": 31738,
+        "html-button-response": 3581
+      },
+      "unique_stimuli": 19
+    }
+  },
+  "steinman": {
+    "shape": [
+      699,
+      194
+    ],
+    "unique_participants": 699,
+    "item_columns": [
+      "blood_test_NF",
+      "blood_test_NS",
+      "blood_test_PF",
+      "blood_test_PS",
+      "elevator_NF",
+      "elevator_NS",
+      "elevator_PF",
+      "elevator_PS",
+      "job_NF",
+      "job_NS",
+      "job_PF",
+      "job_PS",
+      "lunch_NF",
+      "lunch_NS",
+      "lunch_PF",
+      "lunch_PS",
+      "meeting_friend_NF",
+      "meeting_friend_NS",
+      "meeting_friend_PF",
+      "meeting_friend_PS",
+      "noise_NF",
+      "noise_NS",
+      "noise_PF",
+      "noise_PS",
+      "scrape_NF",
+      "scrape_NS",
+      "scrape_PF",
+      "scrape_PS",
+      "shopping_NF",
+      "shopping_NS",
+      "shopping_PF",
+      "shopping_PS",
+      "wedding_NF",
+      "wedding_NS",
+      "wedding_PF",
+      "wedding_PS"
+    ],
+    "rating_nan_cells": 2249,
+    "valid_range": [
+      0.0,
+      3.0
+    ],
+    "prime_assignment": {
+      "NEUTRAL": 365,
+      "ANXIETY": 334
+    },
+    "alpha": {
+      "NS": {
+        "complete_cases": 632,
+        "alpha": 0.7990225626569661
+      },
+      "PS": {
+        "complete_cases": 625,
+        "alpha": 0.7573261253591996
+      }
+    },
+    "stored_mean_reproduction": {
+      "NS": {
+        "max_absolute_error": 0.0
+      },
+      "PS": {
+        "max_absolute_error": 0.0
+      }
+    }
+  },
+  "ji": {
+    "shape": [
+      542,
+      53
+    ],
+    "unique_people": 271,
+    "rows_per_person": {
+      "2": 271
+    },
+    "variant_counts": {
+      "Neg": 271,
+      "Pos": 271
+    },
+    "columns": [
+      "ID",
+      "Progress",
+      "Finished",
+      "Date",
+      "Consent",
+      "Gender",
+      "Age",
+      "Ethnicity",
+      "Education",
+      "Scenario.Variant",
+      "Soc.Interact.Intention",
+      "Pos.OutcomeLikely.Score",
+      "Neg.OutcomeLikely.Score",
+      "Pos.Emo.Impact",
+      "Neg.Emo.Impact",
+      "Neg.Emo.Impact.Rev",
+      "Pos.Attriution.Score",
+      "Neg.Attribution.Score",
+      "NegBias.Likely",
+      "NegBias.EmoImpact",
+      "NegBias.Attrib",
+      "Regret",
+      "Anger",
+      "Humiliation",
+      "Shame",
+      "PlsSurprise",
+      "Gratitude",
+      "UnplsSurprise",
+      "Pride",
+      "Guilt",
+      "Helplessness",
+      "DASS.1",
+      "DASS.2",
+      "DASS.3",
+      "DASS.4",
+      "DASS.5",
+      "DASS.6",
+      "DASS.7",
+      "DASS.8",
+      "DASS.9",
+      "DASS.10",
+      "DASS.11",
+      "DASS.12",
+      "DASS.13",
+      "DASS.14",
+      "DASS.15",
+      "DASS.16",
+      "DASS.17",
+      "DASS.18",
+      "DASS.19",
+      "DASS.20",
+      "DASS.21",
+      "DASS.Depress.Score"
+    ],
+    "item_level_data_present": false,
+    "note": "Two aggregate-valence rows per person; no eight scenario-specific rating fields or scenario index."
+  },
+  "prism_reappraisal": {
+    "shape": [
+      162,
+      62
+    ],
+    "unique_people": 162,
+    "condition_counts": {
+      "Control": 84,
+      "PRISM": 78
+    },
+    "followup_counts": {
+      "Yes": 139,
+      "No": 23
+    },
+    "columns": [
+      "PID",
+      "Condition",
+      "CompleterFU",
+      "TimeSpent_PRE",
+      "TimeSpent_FU",
+      "PFS_Enjoyed_POST",
+      "PFS_Understood_POST",
+      "PFS_Ease_POST",
+      "PFS_Effort_POST",
+      "PFS_HelpOthers_POST",
+      "PFS_Recommend_POST",
+      "PFS_Message_POST",
+      "PFS_SelfFlexible_POST",
+      "PFS_SelfNeg_POST",
+      "PFS_SelfPos_POST",
+      "PFS_OthersFlexible_POST",
+      "PFS_OthersNeg_POST",
+      "PFS_OthersPos_POST",
+      "PFS_Enjoyed_FU",
+      "PFS_Understood_FU",
+      "PFS_Ease_FU",
+      "PFS_Effort_FU",
+      "PFS_HelpOthers_FU",
+      "PFS_Recommend_FU",
+      "PFS_Message_FU",
+      "PFS_SelfFlexible_FU",
+      "PFS_SelfNeg_FU",
+      "PFS_SelfPos_FU",
+      "PFS_OthersFlexible_FU",
+      "PFS_OthersNeg_FU",
+      "PFS_OthersPos_FU",
+      "EffectivenessPOST",
+      "EffectivenessFU",
+      "PRISMskill1",
+      "PRISMskill2",
+      "PRISMskill3",
+      "Controlskill1",
+      "Controlskill2",
+      "OnlineNeg_PRE",
+      "OnlinePos_PRE",
+      "OfflineNeg_PRE",
+      "OfflinePos_PRE",
+      "OnlineNeg_POST",
+      "OnlinePos_POST",
+      "OfflineNeg_POST",
+      "OfflinePos_POST",
+      "OnlineNeg_FU",
+      "OnlinePos_FU",
+      "OfflineNeg_FU",
+      "OfflinePos_FU",
+      "BFNE_PRE",
+      "BFNE_FU",
+      "FOMO_PRE",
+      "FOMO_FU",
+      "PHQ_anx_PRE",
+      "PHQ_anx_FU",
+      "PHQ_dep_PRE",
+      "PHQ_dep_FU",
+      "INCOM_PRE",
+      "INCOM_FU",
+      "PFS_POST",
+      "PFS_FU"
+    ],
+    "index_columns": [
+      "OnlineNeg_PRE",
+      "OnlinePos_PRE",
+      "OfflineNeg_PRE",
+      "OfflinePos_PRE",
+      "OnlineNeg_POST",
+      "OnlinePos_POST",
+      "OfflineNeg_POST",
+      "OfflinePos_POST",
+      "OnlineNeg_FU",
+      "OnlinePos_FU",
+      "OfflineNeg_FU",
+      "OfflinePos_FU"
+    ],
+    "index_min": 4.0,
+    "index_max": 20.0,
+    "index_missing_counts": {
+      "OnlineNeg_PRE": 0,
+      "OnlinePos_PRE": 0,
+      "OfflineNeg_PRE": 0,
+      "OfflinePos_PRE": 0,
+      "OnlineNeg_POST": 0,
+      "OnlinePos_POST": 0,
+      "OfflineNeg_POST": 0,
+      "OfflinePos_POST": 0,
+      "OnlineNeg_FU": 23,
+      "OnlinePos_FU": 23,
+      "OfflineNeg_FU": 23,
+      "OfflinePos_FU": 23
+    },
+    "item_level_aibq_present": false,
+    "means_by_condition": {
+      "OnlineNeg_PRE": {
+        "Control": 11.357142857142858,
+        "PRISM": 11.64102564102564
+      },
+      "OnlinePos_PRE": {
+        "Control": 14.214285714285714,
+        "PRISM": 14.26923076923077
+      },
+      "OfflineNeg_PRE": {
+        "Control": 14.392857142857142,
+        "PRISM": 14.974358974358974
+      },
+      "OfflinePos_PRE": {
+        "Control": 9.869047619047619,
+        "PRISM": 10.14102564102564
+      },
+      "OnlineNeg_POST": {
+        "Control": 11.166666666666666,
+        "PRISM": 9.73076923076923
+      },
+      "OnlinePos_POST": {
+        "Control": 14.428571428571429,
+        "PRISM": 15.333333333333334
+      },
+      "OfflineNeg_POST": {
+        "Control": 14.285714285714286,
+        "PRISM": 11.91025641025641
+      },
+      "OfflinePos_POST": {
+        "Control": 10.178571428571429,
+        "PRISM": 11.782051282051283
+      },
+      "OnlineNeg_FU": {
+        "Control": 11.082191780821917,
+        "PRISM": 9.757575757575758
+      },
+      "OnlinePos_FU": {
+        "Control": 14.835616438356164,
+        "PRISM": 15.681818181818182
+      },
+      "OfflineNeg_FU": {
+        "Control": 14.10958904109589,
+        "PRISM": 12.303030303030303
+      },
+      "OfflinePos_FU": {
+        "Control": 10.986301369863014,
+        "PRISM": 11.621212121212121
+      }
+    },
+    "note": "Published aggregate scores only, not per-vignette responses."
+  },
+  "habitworks": {
+    "wsap-summary.csv": {
+      "shape": [
+        248,
+        41
+      ],
+      "columns": [
+        "id",
+        "study_name",
+        "sitting_id",
+        "battery_id",
+        "battery_name",
+        "test_id",
+        "test_name",
+        "test_params_input",
+        "test_version",
+        "user_id",
+        "device_scan_screenW",
+        "device_scan_UTCoffset",
+        "start_time",
+        "duration",
+        "score",
+        "outcomes_cogBias_meanRT",
+        "outcomes_cogBias_medianRT",
+        "outcomes_cogBias_sdRT",
+        "outcomes_cogBias_yesToPositive_meanRT",
+        "outcomes_cogBias_yesToPositive_medianRT",
+        "outcomes_cogBias_yesToPositive_sdRT",
+        "outcomes_cogBias_noToPositive_meanRT",
+        "outcomes_cogBias_noToPositive_medianRT",
+        "outcomes_cogBias_noToPositive_sdRT",
+        "outcomes_cogBias_yesToNegative_meanRT",
+        "outcomes_cogBias_yesToNegative_medianRT",
+        "outcomes_cogBias_yesToNegative_sdRT",
+        "outcomes_cogBias_noToNegative_meanRT",
+        "outcomes_cogBias_noToNegative_medianRT",
+        "outcomes_cogBias_noToNegative_sdRT",
+        "outcomes_positiveAccuracy",
+        "outcomes_negativeAccuracy",
+        "outcomes_cogBias_responseDevice",
+        "outcomes_cogBias_testVersion",
+        "outcomes_session",
+        "outcomes_cogBias_score",
+        "demographics",
+        "URL_params_study",
+        "URL_params_id",
+        "URL_params_session",
+        "misc"
+      ],
+      "contains_item_response_column": false
+    },
+    "wsap-clean.csv": {
+      "shape": [
+        982,
+        5
+      ],
+      "columns": [
+        "record_id",
+        "outcomes_positiveAccuracy",
+        "outcomes_negativeAccuracy",
+        "time1",
+        "date"
+      ],
+      "contains_item_response_column": false
+    }
+  },
+  "wsap_reliability": {
+    "stimulus_sheet": "Ferguson et al. 2024",
+    "stimulus_rows": 100,
+    "unique_sentences": 51,
+    "valence_counts": {
+      "negative": 50,
+      "positive": 50
+    },
+    "item_level_human_data_obtained": false
+  },
+  "ljmu": {
+    "docx_crc": "PASS",
+    "nonempty_paragraphs": 62,
+    "stems": 15,
+    "options": 45,
+    "instructions_complete": true,
+    "participant_data_files_in_deposit": 0,
+    "source": "ScenariosSet_IBT.docx; title and instructions plus 15 x 4 paragraphs"
+  },
+  "social_prism": {
+    "commit": "77f3b68908d9cdb75109b4b358dc4b120dd068bf",
+    "zip_crc": "PASS",
+    "csvs": {
+      "Exp1.csv": {
+        "shape": [
+          27269,
+          11
+        ],
+        "subject_key": "subNum",
+        "unique_subjects": 73,
+        "columns": [
+          "Unnamed: 0",
+          "subNum",
+          "Num",
+          "Gender_1f2m",
+          "Age",
+          "PicType_PN",
+          "TrialOrder",
+          "RT",
+          "Response_Pictype_PN",
+          "accuracy",
+          "fuz"
+        ],
+        "missing_cells": 0
+      },
+      "Exp2.csv": {
+        "shape": [
+          11463,
+          11
+        ],
+        "subject_key": "subNum",
+        "unique_subjects": 62,
+        "columns": [
+          "Unnamed: 0",
+          "subNum",
+          "Num",
+          "Gender_1f2m",
+          "Age",
+          "PicType_PN",
+          "TrialOrder",
+          "RT",
+          "Response_Pictype_PN",
+          "accuracy",
+          "PicType_NC"
+        ],
+        "missing_cells": 0
+      },
+      "Exp3.csv": {
+        "shape": [
+          11336,
+          8
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 63,
+        "columns": [
+          "StimuliName",
+          "StimuliGender",
+          "Stimulitype",
+          "RT",
+          "keycode",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      },
+      "Exp4.csv": {
+        "shape": [
+          12416,
+          8
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 69,
+        "columns": [
+          "StimuliName",
+          "StimuliGender",
+          "Stimulitype",
+          "RT",
+          "keycode",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      },
+      "Exp5.csv": {
+        "shape": [
+          12548,
+          7
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 70,
+        "columns": [
+          "StimuliName",
+          "StimuliType",
+          "keycode",
+          "RT",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      },
+      "Exp6.csv": {
+        "shape": [
+          11436,
+          7
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 64,
+        "columns": [
+          "StimuliName",
+          "StimuliType_emotion",
+          "keycode",
+          "RT",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      },
+      "Exp7.csv": {
+        "shape": [
+          12598,
+          7
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 70,
+        "columns": [
+          "StimuliName",
+          "StimuliType",
+          "keycode",
+          "RT",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      },
+      "Exp8.csv": {
+        "shape": [
+          12594,
+          7
+        ],
+        "subject_key": "SubjectNum",
+        "unique_subjects": 70,
+        "columns": [
+          "StimuliName",
+          "StimuliType_emotion",
+          "keycode",
+          "RT",
+          "ResponseEmotion",
+          "accuracy",
+          "SubjectNum"
+        ],
+        "missing_cells": 0
+      }
+    },
+    "full_stimuli_in_repo_archive": false,
+    "archive_extensions": [
+      ".csv",
+      ".md",
+      ".py",
+      ".txt",
+      ".xlsx"
+    ]
+  }
+}

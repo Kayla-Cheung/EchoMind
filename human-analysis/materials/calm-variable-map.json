@@ -1,0 +1,218 @@
+[
+  {
+    "published_variable": "elevator_NS",
+    "csv_variable": "elevator_ns",
+    "interpretation_text": "You think that the elevator will probably break down while you are on it. ",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "elevator_PF",
+    "csv_variable": "elevator_pf",
+    "interpretation_text": "You think that you are going to like your friend’s new apartment. ",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "elevator_NF",
+    "csv_variable": "elevator_nf",
+    "interpretation_text": "You think about how smelly the lobby is. ",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "elevator_PS",
+    "csv_variable": "elevator_ps",
+    "interpretation_text": "You think that riding the elevator will be safe. ",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "wedding_PS",
+    "csv_variable": "wedding_ps",
+    "interpretation_text": "People in the audience laugh in appreciation.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "wedding_PF",
+    "csv_variable": "wedding_pf",
+    "interpretation_text": "You notice a friend you were hoping to see walk into the reception.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "wedding_NS",
+    "csv_variable": "wedding_ns",
+    "interpretation_text": "People in the audience find your efforts laughable.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "wedding_NF",
+    "csv_variable": "wedding_nf",
+    "interpretation_text": "You notice someone you do not like just walked into the reception.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "job_PS",
+    "csv_variable": "job_ps",
+    "interpretation_text": "And know that you can rely on your savings.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "job_PF",
+    "csv_variable": "job_pf",
+    "interpretation_text": "And are excited about not having to set an alarm.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "job_NS",
+    "csv_variable": "job_ns",
+    "interpretation_text": "And worry about becoming broke.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "job_NF",
+    "csv_variable": "job_nf",
+    "interpretation_text": "And are sad about leaving your current coworkers.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "noise_PF",
+    "csv_variable": "noise_pf",
+    "interpretation_text": "You feel happy, and think about how lovely your house is.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "noise_NS",
+    "csv_variable": "noise_ns",
+    "interpretation_text": "You feel afraid, and worry that you cannot handle the fear.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "noise_PS",
+    "csv_variable": "noise_ps",
+    "interpretation_text": "You feel afraid, but you know that you can tolerate the feeling.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "noise_NF",
+    "csv_variable": "noise_nf",
+    "interpretation_text": "You feel cold, and think about how the house needs better heating.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "meeting_friend_PF",
+    "csv_variable": "meeting_friend_pf",
+    "interpretation_text": "Order your favorite snack.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "meeting_friend_NF",
+    "csv_variable": "meeting_friend_nf",
+    "interpretation_text": "Notice the bar smells gross.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "meeting_friend_PS",
+    "csv_variable": "meeting_friend_ps",
+    "interpretation_text": "Get a call from your friend who is on her way, but running late.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "meeting_friend_NS",
+    "csv_variable": "meeting_friend_ns",
+    "interpretation_text": "Think your friend decided she did not want to see you.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "lunch_NS",
+    "csv_variable": "lunch_ns",
+    "interpretation_text": "Because she thinks you are a slob.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "lunch_NF",
+    "csv_variable": "lunch_nf",
+    "interpretation_text": "And you frown because you forgot to bring water to lunch.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "lunch_PS",
+    "csv_variable": "lunch_ps",
+    "interpretation_text": "Because she is paying attention as you describe your weekend plans.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "lunch_PF",
+    "csv_variable": "lunch_pf",
+    "interpretation_text": "And you smile because your lunch tastes good.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "scrape_NS",
+    "csv_variable": "scrape_ns",
+    "interpretation_text": "And you think it will probably get seriously infected.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "scrape_NF",
+    "csv_variable": "scrape_nf",
+    "interpretation_text": "And you are frustrated because you tore your shorts.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "scrape_PS",
+    "csv_variable": "scrape_ps",
+    "interpretation_text": "But you know you will be okay.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "scrape_PF",
+    "csv_variable": "scrape_pf",
+    "interpretation_text": "But you are happy that you are getting exercise.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "shopping_NS",
+    "csv_variable": "shopping_ns",
+    "interpretation_text": "And think you are probably coming down with the strange illness.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "shopping_PS",
+    "csv_variable": "shopping_ps",
+    "interpretation_text": "And think you are unlikely to catch the strange illness.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "shopping_PF",
+    "csv_variable": "shopping_pf",
+    "interpretation_text": "And smile because you enjoy shopping.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "shopping_NF",
+    "csv_variable": "shopping_nf",
+    "interpretation_text": "And feel bored of shopping.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "blood_test_PF",
+    "csv_variable": "blood_test_pf",
+    "interpretation_text": "And you think about how nice your doctor is.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "blood_test_NF",
+    "csv_variable": "blood_test_nf",
+    "interpretation_text": "And you are annoyed because your doctor is not very friendly.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "blood_test_NS",
+    "csv_variable": "blood_test_ns",
+    "interpretation_text": "And you think that you will not be able to stand your anxiety while you wait.",
+    "present_in_rr_csv": true
+  },
+  {
+    "published_variable": "blood_test_PS",
+    "csv_variable": "blood_test_ps",
+    "interpretation_text": "And you know that you can handle your anxiety while you wait.",
+    "present_in_rr_csv": true
+  }
+]

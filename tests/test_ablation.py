@@ -114,8 +114,14 @@ class AblationLogic(unittest.TestCase):
             st=Store(Path(temp)/'temp.sqlite3')
             st.add_trial({'id':'old','timestamp':'2026-01-01T00:00:00Z','batch_id':'old',
                           'source':'MOCK_NOT_LLM','status':'complete','protocol':'memory-ratio-v1'})
-            JobManager(st).start(request(1))
-            time.sleep(.3)
+            manager = JobManager(st)
+            job = manager.start(request(1))
+            for _ in range(500):
+                finished = manager.get(job['id'])
+                if finished['status'] not in ('queued', 'running'):
+                    break
+                time.sleep(.01)
+            self.assertEqual(finished['status'], 'complete')
             self.assertTrue(any(r['id']=='old' and r['protocol']=='memory-ratio-v1' for r in Store(st.path).trials()))
 
 
@@ -123,7 +129,7 @@ class AblationHTTP(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temp=tempfile.TemporaryDirectory(); sock=socket.socket();sock.bind(('127.0.0.1',0));cls.port=sock.getsockname()[1];sock.close()
-        env=os.environ.copy();env['SOS_PILOT_DB']=str(Path(cls.temp.name)/'temp.sqlite3')
+        env=os.environ.copy();env['ECHOMIND_PILOT_DB']=str(Path(cls.temp.name)/'temp.sqlite3')
         cls.server=subprocess.Popen([sys.executable,str(ROOT/'server.py'),'--port',str(cls.port)],cwd=ROOT,env=env,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         for _ in range(80):
             try:cls.get('/api/ablation/bootstrap');break

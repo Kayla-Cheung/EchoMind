@@ -1,0 +1,21 @@
+# EchoMind 独立工作目录
+
+**2026-10-23 更新**：Memory Acquisition v0.2 已独立放入本目录。当前启动只使用 `ECHOMIND_PILOT_DB` / `ECHOMIND_OFFLINE`，已移除下文所述旧 SOS 环境变量兼容；原始试次和协议标识仍原样保留。下文是 2026-10-22 的历史迁移记录，当前使用方法见 [MVP_PROTOCOL.md](MVP_PROTOCOL.md)。
+
+迁移日期：2026-10-22。
+
+- 当前目录：`C:\Users\Kayla\Desktop\EchoMind`。
+- 来源目录：`C:\Users\Kayla\Desktop\SOS\experiments\context_memory_pilot`，保留原文件与数据库。
+- 桌面已存在较早的 EchoMind 源码仓库，未含实验数据库。先备份该目录的 50 个源码、测试、页面及配置示例文件，再合入研究审计、来源对照 v2、相关文档与测试；保留原 `.git` 和忽略规则。
+- 旧目录备份：`data/backups/before-echomind-update-20261022T102646Z/previous-files.zip`，附逐文件 SHA-256 清单。恢复旧源码时先停止服务，并另行保留当前目录；备份不包含 `.git` 或凭据。
+- 使用 SQLite backup API 建立新 `data/pilot.sqlite3`，没有移动或重写来源数据库。迁移时共 446 条试次、16 个批次，含 228 条真实 API 完成记录、137 条真实 API 失败记录、81 条 MOCK。所有四张表的逐行哈希与来源一致，完整性检查为 `ok`。
+- 原始 JSON 导出、审计材料与历史数据库备份随工作台复制。历史报告中的 SOS 路径和当时的日期作为审计证据保留；当前路径以本说明及 `/api/health` 为准。
+- 未复制 `.env`、浏览器资料、运行日志与 Python 缓存。原目录的密钥配置保持原位；当前默认离线启动，真实调用需用户另行配置和手动发起。
+
+## 使用
+
+双击 `启动EchoMind.bat`。名称、界面和启动说明使用 EchoMind。新服务为 `http://127.0.0.1:8769/`；原 SOS 服务保留在 `http://127.0.0.1:8768/`。切换旧服务的命令被自动审批拦截，因此采用独立端口并存。启动器固定使用本目录自己的数据库，并检查现有服务的目录、数据库、代码版本和离线模式。若是其他目录的服务占用端口，提示用户关闭，不自动终止进程或误开旧库。
+
+新旧目录的数据库是独立副本，此后不自动同步。协议 ID、Prompt 版本、历史编码和内部兼容标识继续保留；仅名称变更不会产生新的科研结果。低层服务兼容 `SOS_PILOT_DB` / `SOS_OFFLINE`，并支持 `ECHOMIND_PILOT_DB` / `ECHOMIND_OFFLINE`。
+
+详细复制清单与数据库表哈希见 `data/echomind-migration.json`。离线运行与浏览器验证见 `TEST_REPORT.md`。

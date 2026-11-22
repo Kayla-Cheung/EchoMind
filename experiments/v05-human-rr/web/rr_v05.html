@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EchoMind v0.5 · Human-Referenced RR</title><link rel="stylesheet" href="/rr_v05.css"></head>
+<body>
+<header><div><p class="eyebrow">ECHOMIND v0.5</p><h1>Human-Referenced Interpretation Bias</h1><p>Recognition Ratings workbench · local research data only</p></div><span id="health" class="pill">Checking…</span></header>
+<nav><button data-view="overview" class="active">Overview</button><button data-view="measurement">Measurement</button><button data-view="results">Results</button><button data-view="exports">Exports</button></nav>
+<main>
+  <section id="overview" class="view active"><h2>Protocol status</h2><div id="status" class="grid"></div><div class="notice"><strong>Interpretation rule:</strong> lower ordinal Wasserstein distance means closer rating distributions. It does not by itself demonstrate human psychological fidelity.</div></section>
+  <section id="measurement" class="view"><h2>Source-aligned measurement</h2><div id="procedure"></div><div id="stories"></div></section>
+  <section id="results" class="view"><h2>REAL pilot results</h2><p id="metric"></p><div id="condition-results" class="cards"></div></section>
+  <section id="exports" class="view"><h2>Private local exports</h2><p>These downloads may contain complete prompts and model responses. Keep them out of the public repository.</p><div class="actions"><a href="/api/export/raw.json">Export REAL raw responses (JSON)</a><a href="/api/export/ratings.csv">Export parsed ratings (CSV)</a></div></section>
+</main>
+<script src="/rr_v05.js"></script>
+</body></html>

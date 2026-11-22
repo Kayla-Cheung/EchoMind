@@ -1,4 +1,4 @@
-"""Immutable proposed prompt bundles. Preview only; never replace historical jobs."""
+"""Immutable prompt bundles; runnable through source-v2, never replace old jobs."""
 import copy
 import re
 from datetime import datetime, timezone
@@ -63,6 +63,27 @@ BUILTINS = [
 FIELDS = ("version", "name", "parent", "system", "memory_template", "agent_user", "coder_system", "coder_user", "coder_version", "hypothesis")
 
 
+def _object(properties):
+    return {"type": "object", "properties": properties, "required": list(properties), "additionalProperties": False}
+
+
+def _enum(*values):
+    return {"type": "string", "enum": list(values)}
+
+
+_EVIDENCE = {"type": "array", "items": {"type": "string"}}
+MULTIAXIS_SCHEMA = _object({
+    **{k: _object({"value": _enum("present", "absent", "uncertain"), "evidence": _EVIDENCE}) for k in
+       ("negative_attribution", "benign_attribution", "negative_affect", "explicit_memory_link")},
+    "negative_commitment": _enum("none", "possible", "endorsed", "uncertain"),
+    "negative_target": {"type": "array", "items": _enum("self", "other", "outcome", "unclear")},
+    "actions": {"type": "array", "items": _object({"kind": _enum("contact", "wait", "withdraw", "unrelated", "other"),
+                 "timing": _enum("now", "later", "conditional", "unclear"),
+                 "commitment": _enum("done", "decided", "hypothetical", "unclear"), "evidence": _EVIDENCE})},
+    "action_observability": _enum("explicit", "absent", "uncertain"), "uncertainty_note": {"type": "string"},
+})
+
+
 def stamped(bundle):
     return {**copy.deepcopy(bundle), "content_hash": digest({k: v for k, v in bundle.items() if k != "content_hash"})}
 
@@ -89,7 +110,9 @@ def validate_bundle(bundle):
                "agent_user": {"memory", "scenario"}, "coder_user": {"scenario", "response"}, "coder_system": set()}
     for field, required in allowed.items():
         template = Template(bundle[field])
-        if not template.is_valid() or set(template.get_identifiers()) != required:
+        matches = list(template.pattern.finditer(bundle[field]))
+        identifiers = {m.group("named") or m.group("braced") for m in matches if m.group("named") or m.group("braced")}
+        if any(m.group("invalid") is not None for m in matches) or identifiers != required:
             raise ValueError(field + " 占位符必须恰为：" + ", ".join(sorted(required)))
     return bundle
 
@@ -102,6 +125,9 @@ def save_bundle(store, data):
         raise ValueError("版本号已存在；旧版不可覆盖")
     if (bundle["coder_system"], bundle["coder_user"]) != (parent["coder_system"], parent["coder_user"]) and bundle["coder_version"] == parent["coder_version"]:
         raise ValueError("修改编码规则必须同时修改 coder_version")
+    for existing in catalog(store):
+        if existing["coder_version"] == bundle["coder_version"] and (existing["coder_system"], existing["coder_user"]) != (bundle["coder_system"], bundle["coder_user"]):
+            raise ValueError("同一 coder_version 不可对应不同编码规则")
     bundle = stamped({**bundle, "protocol": BASE["protocol"], "status": BASE["status"],
                       "created_at": datetime.now(timezone.utc).isoformat(), "parent_hash": parent["content_hash"]})
     store.save_setting("prompt:" + bundle["version"], bundle, immutable=True)
@@ -149,4 +175,10 @@ def validate_multiaxis(coding, response):
             raise ValueError("行动必须有引文")
     if coding["action_observability"] not in ("explicit", "absent", "uncertain") or not isinstance(coding["uncertainty_note"], str):
         raise ValueError("可观察性字段无效")
+    if coding["negative_attribution"]["value"] == "absent" and (coding["negative_target"] or coding["negative_commitment"] != "none"):
+        raise ValueError("无负面归因时，对象为空且 commitment=none")
+    if coding["negative_attribution"]["value"] == "present" and (not coding["negative_target"] or coding["negative_commitment"] == "none"):
+        raise ValueError("负面归因 present 需有对象及可能/采纳程度")
+    if coding["action_observability"] == "absent" and coding["actions"] or coding["action_observability"] == "explicit" and not coding["actions"]:
+        raise ValueError("行动列表与可观察性冲突")
     return coding

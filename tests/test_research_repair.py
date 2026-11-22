@@ -123,7 +123,7 @@ class RecoveryTests(StoreFixture, unittest.TestCase):
         relative = os.path.relpath(self.path, ROOT)
         self.store.add_trial(record())
         code = "from storage import Store; import sys,json; s=Store(sys.argv[1]); print(json.dumps([str(s.path),len(s.trials())]))"
-        env = {**os.environ, "PYTHONPATH":str(ROOT), "SOS_OFFLINE":"1"}
+        env = {**os.environ, "PYTHONPATH":str(ROOT), "ECHOMIND_OFFLINE":"1"}
         result = subprocess.check_output([sys.executable,"-c",code,relative],cwd=self.temp.name,env=env,text=True)
         self.assertEqual(json.loads(result),[str(self.path.resolve()),1])
 
@@ -177,7 +177,7 @@ class CircuitTests(StoreFixture, unittest.TestCase):
         spec=make_spec({"provider":"deepseek"})
         def failure(*args):raise urllib.error.HTTPError("https://example.invalid",429,"test",{},io.BytesIO(b'synthetic-secret'))
         with patch("model_client.time.sleep"),patch("model_client.os.getenv",side_effect=AssertionError("must not read credentials")):
-            # offline_mode reads only SOS_OFFLINE, so separately stub it.
+            # offline_mode reads only ECHOMIND_OFFLINE, so separately stub it.
             with patch("model_client.offline_mode",return_value=True):
                 with self.assertRaises(ProviderError) as caught:call(spec,[{"role":"user","content":"x"}],transport=failure)
         self.assertEqual(caught.exception.meta["attempts"],3)
@@ -212,7 +212,7 @@ class HistoryHTTPTests(StoreFixture, unittest.TestCase):
             sock.bind(('127.0.0.1',0)); self.port=sock.getsockname()[1]
         self.opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         self.process=subprocess.Popen([sys.executable,str(ROOT/'server.py'),'--offline','--port',str(self.port)],
-            cwd=self.temp.name,env={**os.environ,'SOS_OFFLINE':'1','SOS_PILOT_DB':str(self.path)},
+            cwd=self.temp.name,env={**os.environ,'ECHOMIND_OFFLINE':'1','ECHOMIND_PILOT_DB':str(self.path)},
             stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         self.addCleanup(self.stop_server)
         for _ in range(80):

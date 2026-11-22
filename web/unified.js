@@ -1,7 +1,7 @@
 /* Switches experiment panels without navigation or merging datasets. */
 (() => {
   'use strict';
-  const names = ['history', 'mechanism', 'ablation', 'prompts'];
+  const names = ['history', 'measurement', 'acquisition', 'mechanism', 'ablation', 'prompts'];
   const tabs = Object.fromEntries(names.map(n => [n, document.getElementById('tab-' + n)]));
   const views = Object.fromEntries(names.map(n => [n, document.getElementById('view-' + n)]));
   function show(name, saveHash) {

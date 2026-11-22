@@ -36,7 +36,7 @@ class UnifiedUiTests(unittest.TestCase):
             listener.bind(('127.0.0.1', 0))
             port = listener.getsockname()[1]
             listener.close()
-            env = dict(os.environ, SOS_PILOT_DB=str(Path(directory)/'only-test.sqlite3'))
+            env = dict(os.environ, ECHOMIND_PILOT_DB=str(Path(directory)/'only-test.sqlite3'))
             process = subprocess.Popen([sys.executable, '-u', 'server.py', '--port', str(port)],
                                       cwd=str(ROOT), env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             try:

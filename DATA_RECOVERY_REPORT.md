@@ -6,7 +6,7 @@
 
 原实验 A、实验 B、MiMo 60 次认证失败记录均未丢失。修复的是历史访问、展示与持久化机制，没有重建数据、重编码旧回答或覆盖数据库。
 
-初查主库有 **362 条记录、14 个批次**，其中真实调用完成 144 条、真实调用失败 137 条、MOCK 完成 81 条。修复期间另一个服务运行进程新增批次 `958e4338-ab90-4f0b-85dc-8c523e246723`：DeepSeek / memory-ratio-v1，60 条真实完成，UTC 08:08:36–08:09:20。它单独保留，不纳入本报告的原实验 A/B。当前审计快照为 **422 条、15 个批次**。本轮自动验证没有发起真实模型调用。
+初查主库有 **362 条记录、14 个批次**，其中真实调用完成 144 条、真实调用失败 137 条、MOCK 完成 81 条。修复期间观察到两个额外 LIVE 批次：`958e4338-ab90-4f0b-85dc-8c523e246723`（DeepSeek / memory-ratio-v1，60 条完成，首条 UTC 08:08:36），以及 `bc6d3dec-4a89-414b-8256-7c9686eaac3c`（DeepSeek / memory-ablation-v1，24 条完成，首条 UTC 08:21:12）。期间曾发现另一个服务进程运行，但没有追踪操作者；本轮自动验证均使用临时库、MOCK 或假传输，没有发起这些真实模型调用。两批单独保留，不纳入本报告的原实验 A/B。最终审计快照为 **446 条、16 个批次**，其中 LIVE 完成 228、LIVE 失败 137、MOCK 完成 81；初始 362 条全部未变。
 
 “恢复”具体是：让初始 362 条记录重新在统一历史入口可见；从外部文件补写 **0 条**，删除 **0 条**，静默改写旧结果 **0 条**。新的记录仍可通过相同入口访问。
 
@@ -23,6 +23,8 @@
 | 新审计证据 | `data/research-audit/inventory-and-metrics.json`、`A-original.json`、`B-original.json`、`MiMo_failed-original.json`、`all-original-records.json` |
 
 搜索覆盖 SOS 项目树内 `.sqlite3/.sqlite/.db/.bak/.zip` 及相关 JSON；排除临时浏览器缓存。另核对常见误建位置（用户目录、Desktop/SOS、experiments 下的 data/pilot.sqlite3）。除本轮新建备份外只发现上述一个主库。没有扫描整个磁盘，也不能据此排除未提供的外置盘或其他目录。
+
+另检查 `../SOS_demo_merged_ui_patch.zip` 的条目清单：8 个文件，包含源码/页面/测试/说明，不含数据库。没有打开其中任何凭据文件。
 
 数据库原有四张表：`settings`（设计配置）、`trials`（索引字段及完整 JSON payload）、`human_ground_truth`、`state_human_datasets`。本轮 **没有 schema 迁移**。新任务状态与不可覆盖的 Prompt 版本存入现有 settings 的独立命名空间，不修改旧 design 或旧 trial。
 

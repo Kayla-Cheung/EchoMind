@@ -1,6 +1,6 @@
 # 记忆归属 × 输出格式：消融实验 `memory-ablation-v1`
 
-新增页面：`http://127.0.0.1:8768/ablation`。原 `/` (`memory-ratio-v1`) 和 `/study` 不改变协议或旧数据。
+新增页面：`http://127.0.0.1:8769/ablation`。原 `/` (`memory-ratio-v1`) 和 `/study` 不改变协议或旧数据。
 
 ## 设计
 

@@ -6,13 +6,13 @@ import {resolve,join,sep} from 'node:path';
 import {createServer} from 'node:net';
 import assert from 'node:assert/strict';
 const root=resolve(import.meta.dirname,'..');
-const scratch=await mkdtemp(join(tmpdir(),'sos-state-ui-'));
+const scratch=await mkdtemp(join(tmpdir(),'echomind-state-ui-'));
 const socket=createServer();await new Promise(r=>socket.listen(0,'127.0.0.1',r));const port=socket.address().port;await new Promise(r=>socket.close(r));
 let backend,browser,ws;
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 async function until(fn,limit=15000){const started=Date.now();while(Date.now()-started<limit){try{const value=await fn();if(value)return value}catch{}await pause(100)}throw Error('UI timeout')}
 try{
-  backend=spawn('python',['-u','server.py','--port',String(port)],{cwd:root,env:{...process.env,SOS_PILOT_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'});
+  backend=spawn('python',['-u','server.py','--offline','--port',String(port)],{cwd:root,env:{...process.env,ECHOMIND_OFFLINE:'1',ECHOMIND_PILOT_DB:join(scratch,'ui.sqlite3')},windowsHide:true,stdio:'ignore'});
   const url=`http://127.0.0.1:${port}`;
   await until(async()=> (await fetch(url+'/api/state/bootstrap')).ok);
   const profile=join(scratch,'edge');

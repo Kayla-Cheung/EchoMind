@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>EchoMind · 单情境实验工作台</title><link rel="stylesheet" href="/style.css"></head>
+<body>
+<header><div class="brand"><span class="mark">E</span><div><strong>EchoMind</strong><span>RESEARCH WORKBENCH</span></div></div><span class="local">本地研究数据</span></header>
+<main>
+<div class="intro"><div><p class="eyebrow">RR-ISOLATION-001 · WORK 执行</p><h1>一次情境，一份记忆。</h1><p class="subtitle">比较单情境独立测试与九情境批量测试的评分分布。</p></div><a class="issue" href="https://github.com/Kayla-Cheung/EchoMind/issues/12" target="_blank" rel="noreferrer">查看研究任务 ↗</a></div>
+<div id="loading" role="status">正在读取本地记录…</div>
+<div id="content" hidden>
+<div class="gate-banner"><span class="status-label">NO-GO · GATE A</span><div><strong>预检未通过，真实实验尚未启动</strong><p>新工作台已建立。先核清累计费用与完整矩阵预算，再开放真实运行。</p></div><span class="zero">本次新增调用 <b id="new-calls">0</b></span></div>
+<div class="metrics"><article><span>独立对话完成</span><strong><b id="episode-count">0</b><small> / 60</small></strong><div class="track"><i id="episode-progress"></i></div><p>6 个 Batch + 54 个 Isolated</p></article><article><span>有效模型请求</span><strong><b id="request-count">0</b><small> / 120</small></strong><p>每个对话包含编码与评分两个阶段</p></article><article><span>本次真实评分</span><strong><b id="rating-count">0</b><small> / 432</small></strong><p>每题、每种记忆、每组各 2 次</p></article><article><span>增量费用上限</span><strong>$0.025<small> USD</small></strong><p>全项目累计上限 $0.050</p></article></div>
+<nav aria-label="工作台页面"><button class="active" data-view="overview">实验概览</button><button data-view="preview">单情境预览</button><button data-view="design">对照设计</button><button data-view="history">历史与费用</button><button data-view="real-results">真实结果</button></nav>
+<section class="view" id="real-results"><div class="section-head"><div><h2>Batch／Isolated 真实对照</h2><p>完整平衡矩阵形成后，显示对同一批人类题目分布的配对 W1；数值越低越接近该参考。</p></div></div><div id="real-result-content">完整矩阵仍在运行，暂不计算结果。</div></section>
+<section class="view active" id="overview">
+<div class="section-head"><h2>运行前需要解决</h2><span>保留现有费用限制</span></div><div id="blockers" class="blockers"></div>
+<div class="split"><article class="plain"><h2>检查记录</h2><div id="checks"></div></article><article class="note"><span class="eyebrow">结果解释边界</span><h2>这是可行性试验</h2><ul id="limitations"></ul><p>本次数据尚未形成完整平衡矩阵，因此不显示 W1 结果，也不把历史评分充作本次结果。</p></article></div>
+</section>
+<section class="view" id="preview">
+<div class="section-head"><div><h2>查看实际发送的消息结构</h2><p>这里只预览，不调用模型。评分阶段中的回答位置是明确标注的占位内容。</p></div><span class="tag">私有内容 · 仅限本地</span></div>
+<div class="controls"><label>呈现方式<select id="arm"><option value="ISOLATED">Isolated · 单情境</option><option value="BATCH">Batch · 九情境</option></select></label><label>记忆条件<select id="condition"><option value="none">无记忆</option><option value="neutral_direct">中性记忆</option><option value="negative_direct">负面记忆</option></select></label><label>情境<select id="scenario"></select></label></div>
+<div class="preview-facts" id="preview-facts"></div><div class="phases"><article><h3><span>01</span> 编码阶段</h3><p>阅读情境并回答理解问题；此时不展示评分选项。</p><div id="encoding"></div></article><article><h3><span>02</span> 评分阶段</h3><p>保留本对话的编码历史，再对原有选项进行 1–4 分语义相似度评分。</p><div id="rating"></div></article></div>
+</section>
+<section class="view" id="design"><div class="section-head"><div><h2>完整对照设计</h2><p>两次重复 × 三种记忆。下方每个标记对应一个独立对话，当前均为“未开始”。</p></div><span class="tag">固定调度种子 20261116</span></div><div id="matrix"></div><div class="split"><article class="note"><h2>保持一致</h2><p>deepseek-flash · P0 · temperature 0.7 · 关闭推理模式 · 每阶段最多 1 次尝试。保留原始故事、选项顺序与昨天的记忆内容。</p></article><article class="note"><h2>只改变分包方式</h2><p>Batch 每次包含 9 个故事；Isolated 每次只包含 1 个故事和该记忆条件。不同情境、记忆和重复之间均新建对话。</p></article></div></section>
+<section class="view" id="history"><div class="section-head"><div><h2>已有记录与本次预算</h2><p>历史实验独立保存，以下数量均不计入本次完成度。</p></div></div><div id="history-cards" class="history-cards"></div><div class="budget"><div><p class="eyebrow">完整 120 请求 · 离线诊断</p><h2 id="cost-bound"></h2><p>沿用编码 800、评分 1800 的输出额度，不假设缓存命中，不安排重试，并将编码回答计入第二阶段输入。</p></div><div class="budget-detail"><span>增量上限 <b>$0.025000</b></span><span>仅输出额度的最坏预算 <b>$0.093600</b></span><span>精确聊天模板 <b>待核验</b></span></div></div><div class="notice" id="billing-caveat"></div><p class="sources">价格依据：<a href="https://api-docs.deepseek.com/quick_start/pricing/" target="_blank" rel="noreferrer">DeepSeek 官方价格</a> · <a href="https://api-docs.deepseek.com/quick_start/token_usage/" target="_blank" rel="noreferrer">官方分词说明</a>。完整输入估算含模板开销假设，未作为 GO 授权。</p><a class="download" href="/api/export/checkpoint.json" download="RR-ISOLATION-001-checkpoint.json">下载本次去识别检查摘要</a></section>
+<footer><span>原始 v0.5、历史实验与 Desktop 主工作区保持独立。</span><span id="observed"></span></footer>
+</div></main><script src="/app.js"></script></body></html>

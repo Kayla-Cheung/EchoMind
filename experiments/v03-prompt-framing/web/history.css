@@ -1,0 +1,10 @@
+.experiment-tabs{flex-wrap:wrap}.experiment-tabs button{flex:1 1 210px}
+.hist-filters{grid-template-columns:repeat(3,minmax(0,1fr))}.hist-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:20px}
+.hist-comparison>div{min-width:0}.hist-comparison>div:empty{display:none}
+#view-history pre,#view-prompts pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:500px;overflow:auto;font-size:12px}
+#view-history table{min-width:620px;width:100%;font-size:13px}#view-history td,#view-history th{padding:10px;text-align:left;border-bottom:1px solid #ddd}
+#view-history details{margin:12px 0}#view-history summary{cursor:pointer;overflow-wrap:anywhere}
+#view-history .hist-record{border:1px solid #ddd;padding:10px;border-radius:8px}#hist-database,#hist-overview{overflow-wrap:anywhere}
+#prompt-editor{width:100%;box-sizing:border-box;font:13px/1.5 Consolas,monospace;padding:12px;resize:vertical;background:#fbfcfb;border:1px solid #b9c5bb;border-radius:8px}
+.hist-tag{font-size:11px;background:#eef2ed;padding:3px 6px;border-radius:4px}
+@media(max-width:760px){.hist-filters{grid-template-columns:1fr 1fr}.experiment-tabs button{flex-basis:45%}.hist-comparison{grid-template-columns:1fr}}

@@ -84,7 +84,7 @@ class HttpTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         sock = socket.socket(); sock.bind(('127.0.0.1', 0)); cls.port = sock.getsockname()[1]; sock.close()
-        env = os.environ.copy(); env['SOS_PILOT_DB'] = str(Path(cls.tmp.name) / 'test.sqlite3')
+        env = os.environ.copy(); env['ECHOMIND_PILOT_DB'] = str(Path(cls.tmp.name) / 'test.sqlite3')
         cls.proc = subprocess.Popen([sys.executable, str(ROOT / 'server.py'), '--port', str(cls.port)],
                                     cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         for _ in range(80):
