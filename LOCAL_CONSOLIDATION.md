@@ -47,4 +47,7 @@ environment. These HTTP checks remain unverified here; they are not reported as
 passing. Offline logic checks and the independent snapshots are checked separately
 in the synchronization verification record.
 
+See [the verification record](SYNC_VERIFICATION_2026-11-22.md) for exact scopes and
+remaining checks.
+
 No paid model calls or new human/agent experiments were run for this consolidation.
