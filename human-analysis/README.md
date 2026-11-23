@@ -64,7 +64,7 @@ EchoMind-analysis/
 2. 點擊功能表 **檔案 (File) -> 開啟資料夾 (Open Folder)**。
 3. 選擇桌面路徑：
    ```text
-   C:\Users\Kayla\Desktop\EchoMind-analysis
+   <echomind-analysis-dir>
    ```
 4. **確認擴充套件**：
    - 確保已安裝 Microsoft 官方 **Python** 與 **Jupyter** 擴充套件（搜尋 `ms-toolsai.jupyter` 並安裝）。
@@ -72,7 +72,7 @@ EchoMind-analysis/
    - 在左側檔案總管展開 `notebooks/`，點擊打開 **`01_data_exploration.ipynb`**。
 6. **選取 Jupyter Kernel**：
    - 點擊筆記本右上角的 **「選取核心 (Select Kernel)」**。
-   - 選擇 **Python Environments...** -> 選擇 `base (C:\Users\Kayla\anaconda3\python.exe)` 或新建的 `echomind-analysis`。
+   - 選擇 **Python Environments...** -> 選擇 `base (<conda-python>)` 或新建的 `echomind-analysis`。
 7. **逐個執行 Cells**：
    - 依序點擊 Cell 左側的執行按鈕（或按 `Shift + Enter`），即可看到 Pandas 讀取的真實實驗數據。
 

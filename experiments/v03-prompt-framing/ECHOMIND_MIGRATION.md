@@ -4,8 +4,8 @@
 
 迁移日期：2026-10-22。
 
-- 当前目录：`C:\Users\Kayla\Desktop\EchoMind`。
-- 来源目录：`C:\Users\Kayla\Desktop\SOS\experiments\context_memory_pilot`，保留原文件与数据库。
+- 当前目录：`<repo-root>`。
+- 来源目录：`<legacy-sos-dir>`，保留原文件与数据库。
 - 桌面已存在较早的 EchoMind 源码仓库，未含实验数据库。先备份该目录的 50 个源码、测试、页面及配置示例文件，再合入研究审计、来源对照 v2、相关文档与测试；保留原 `.git` 和忽略规则。
 - 旧目录备份：`data/backups/before-echomind-update-20261022T102646Z/previous-files.zip`，附逐文件 SHA-256 清单。恢复旧源码时先停止服务，并另行保留当前目录；备份不包含 `.git` 或凭据。
 - 使用 SQLite backup API 建立新 `data/pilot.sqlite3`，没有移动或重写来源数据库。迁移时共 446 条试次、16 个批次，含 228 条真实 API 完成记录、137 条真实 API 失败记录、81 条 MOCK。所有四张表的逐行哈希与来源一致，完整性检查为 `ok`。

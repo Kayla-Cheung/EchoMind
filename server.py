@@ -39,6 +39,8 @@ JOBS = JobManager(STORE)
 MAX_BODY = 1_000_000
 MAX_IMPORT_BODY = 50_000_000
 PROVIDER_TESTS = {}
+PROVIDER_TESTS_LOCK = threading.Lock()
+LOCAL_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 WORKBENCH_VERSION = "research-repair-v1"
 
 
@@ -89,6 +91,29 @@ def csv_export(records):
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _validate_local_request(self, *, require_json=False):
+        host = (self.headers.get("Host") or "").strip()
+        if host:
+            parsed_host = urlsplit("http://" + host)
+            if parsed_host.hostname not in LOCAL_HOSTS:
+                return "Non-local Host rejected"
+        sec_fetch = (self.headers.get("Sec-Fetch-Site") or "").strip().lower()
+        if sec_fetch and sec_fetch not in ("same-origin", "none"):
+            return "Cross-site request rejected"
+        origin = (self.headers.get("Origin") or "").strip()
+        if origin:
+            parsed_origin = urlsplit(origin)
+            server_port = getattr(self.server, "server_port", None)
+            if (parsed_origin.scheme != "http"
+                    or parsed_origin.hostname not in LOCAL_HOSTS
+                    or (server_port is not None and parsed_origin.port != server_port)):
+                return "Cross-origin request rejected"
+        if require_json:
+            ctype = (self.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+            if ctype != "application/json":
+                return "POST requires Content-Type: application/json"
+        return None
+
     def send(self, value, status=200, mime="application/json; charset=utf-8", attachment=None):
         raw = value if isinstance(value, bytes) else value.encode("utf-8") if isinstance(value, str) else json.dumps(value, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
@@ -106,6 +131,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        blocked = self._validate_local_request(require_json=False)
+        if blocked:
+            return self.send({"error": blocked}, 403)
         try:
             query = {k: v[0] for k, v in parse_qs(urlsplit(self.path).query).items()}
             if path == "/api/health":
@@ -210,7 +238,9 @@ class Handler(BaseHTTPRequestHandler):
                                   "providers": provider_info(),
                                   "human_count": STORE.human_count()})
             if path == "/api/providers":
-                return self.send([{**info, "status": PROVIDER_TESTS.get(info["id"], {}).get("status", "未配置" if not info["configured"] else None)} for info in provider_info()])
+                with PROVIDER_TESTS_LOCK:
+                    snapshot = dict(PROVIDER_TESTS)
+                return self.send([{**info, "status": snapshot.get(info["id"], {}).get("status", "未配置" if not info["configured"] else None)} for info in provider_info()])
             if path == "/api/trials":
                 return self.send([r for r in STORE.trials() if r.get("protocol") not in (PROTOCOL_ID, MECHANISM_ID, ABLATION_ID, measurement.PROTOCOL_ID, acquisition.PROTOCOL_ID)])
             if path.startswith("/api/jobs/"):
@@ -254,11 +284,17 @@ class Handler(BaseHTTPRequestHandler):
                 rel, mime = assets[path]
                 return self.send((ROOT / rel).read_bytes(), mime=mime)
             return self.send({"error": "Not Found"}, 404)
-        except ValueError as exc:
+        except (ValueError, FileNotFoundError) as exc:
             return self.send({"error": str(exc)}, 404)
+        except Exception as exc:
+            print(f"[error] GET {path}: {exc}", file=sys.stderr)
+            return self.send({"error": "Internal Server Error"}, 500)
 
     def do_POST(self):
         path = urlsplit(self.path).path
+        blocked = self._validate_local_request(require_json=True)
+        if blocked:
+            return self.send({"error": blocked}, 403)
         try:
             size = int(self.headers.get("Content-Length", "0"))
             if not 0 < size <= (MAX_IMPORT_BODY if path.startswith("/api/history/import") else MAX_BODY):
@@ -350,15 +386,18 @@ class Handler(BaseHTTPRequestHandler):
                     raise ValueError("离线模式禁止连接测试")
                 spec = make_spec(data.get("model_spec"))
                 if not os.getenv(PROVIDERS[spec.provider]["env"], "").strip():
-                    PROVIDER_TESTS[spec.provider] = {"status": "未配置"}
+                    with PROVIDER_TESTS_LOCK:
+                        PROVIDER_TESTS[spec.provider] = {"status": "未配置"}
                     raise ValueError("该 Provider 的环境变量密钥未配置")
                 try:
                     answer, meta = call(spec, [{"role": "user", "content": "请只回复：连接成功"}], timeout=20, attempts=1)
-                    PROVIDER_TESTS[spec.provider] = {"status": "可用"}
+                    with PROVIDER_TESTS_LOCK:
+                        PROVIDER_TESTS[spec.provider] = {"status": "可用"}
                     return self.send({"status": "可用", "provider": spec.provider, "model": spec.model,
                                       "latency_ms": meta["latency_ms"], "usage": meta["usage"]})
                 except Exception as exc:
-                    PROVIDER_TESTS[spec.provider] = {"status": "失败"}
+                    with PROVIDER_TESTS_LOCK:
+                        PROVIDER_TESTS[spec.provider] = {"status": "失败"}
                     return self.send({"status": "失败", "error": str(exc)[:350]}, 502)
             if path == "/api/jobs":
                 return self.send(JOBS.start(data), 202)

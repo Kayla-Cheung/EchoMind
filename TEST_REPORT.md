@@ -10,7 +10,7 @@ EchoMind 独立项目最终全套 **81 项测试通过，47.258 秒**。新增�
 
 ## EchoMind 独立目录验证（2026-10-22）
 
-本节针对 `C:\Users\Kayla\Desktop\EchoMind`。当前地址 `http://127.0.0.1:8769/`，以离线模式运行，实际数据库为本目录 `data/pilot.sqlite3`；原 SOS 及其 8768 服务保留。以下旧报告的路径和版本为当时的历史证据。
+本节针对 `<repo-root>`。当前地址 `http://127.0.0.1:8769/`，以离线模式运行，实际数据库为本目录 `data/pilot.sqlite3`；原 SOS 及其 8768 服务保留。以下旧报告的路径和版本为当时的历史证据。
 
 - `python -m unittest discover -s tests -v`：**61 项通过**，20.288 秒。包括原有 57 项及 4 项启动隔离回归测试，验证其他目录／数据库／版本／模式不可误开、继承旧数据库环境变量时仍固定使用本目录，以及两个离线开关均能禁止调用。输出保存在 `data/echomind-unittest.txt`。
 - `node tests/browser_measurement_smoke.mjs`：通过。新目录的临时数据库运行 8 + 192 条 MOCK，验证预览、刷新恢复、多维编码、历史与导出，以及桌面和手机布局；无 JavaScript 异常。

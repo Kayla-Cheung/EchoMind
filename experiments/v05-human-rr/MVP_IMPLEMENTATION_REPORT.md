@@ -1,6 +1,6 @@
 # EchoMind Memory Acquisition MVP v0.2 — 实现与验收
 
-日期：2026-10-23。当前唯一工作目录：`C:\Users\Kayla\Desktop\EchoMind`。本实验已从 SOS 独立出来；运行时不访问 SOS 文件夹，不使用 SOS 的数据库或离线环境变量。历史试次保留原始协议和来源信息。
+日期：2026-10-23。当前唯一工作目录：`<repo-root>`。本实验已从 SOS 独立出来；运行时不访问 SOS 文件夹，不使用 SOS 的数据库或离线环境变量。历史试次保留原始协议和来源信息。
 
 ## 1. 路径与架构
 
@@ -89,7 +89,7 @@ Direct 与 Transcript 由同一结构化事件事实逐字渲染，呈现顺序�
 ## 7. 启动、运行和 REAL smoke
 
 ```powershell
-Set-Location C:\Users\Kayla\Desktop\EchoMind
+Set-Location <repo-root>
 .\启动EchoMind.bat
 # 只预览默认 84 条方案
 & 'C:\Program Files\Python311\python.exe' mvp_cli.py

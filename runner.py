@@ -315,12 +315,15 @@ class JobManager:
         with ThreadPoolExecutor(max_workers=settings["concurrency"]) as pool:
             pending = set()
             while True:
-                while len(pending) < settings["concurrency"] and not job["cancel_event"].is_set() and not job["error"]:
-                    task = next(tasks, None)
-                    if task is None:
-                        break
-                    job["unissued"] -= 1
-                    self._persist(job)
+                while len(pending) < settings["concurrency"] and not job["cancel_event"].is_set():
+                    with self.lock:
+                        if job["error"]:
+                            break
+                        task = next(tasks, None)
+                        if task is None:
+                            break
+                        job["unissued"] -= 1
+                        self._persist(job)
                     pending.add(pool.submit(execute_task, self.store, design, task, settings, job["id"], job["cancel_event"]))
                 if not pending:
                     break
@@ -345,6 +348,7 @@ class JobManager:
                         with self.lock:
                             job["error"] = str(exc)[:500]
                             job["stop_reason"] = "runner_error"
+                            self._persist(job)
         with self.lock:
             job["status"] = "cancelled" if job["cancel_event"].is_set() else "error" if job["error"] else "complete"
             job["finished_at"] = utc_now()

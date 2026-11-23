@@ -19,11 +19,13 @@ coverage/
 *.zip
 *.bak
 *.tmp
+*.pid
 data/*
 !data/scenarios.json
 !data/rr_v05_source_manifest.json
 
-# Experimental implementations are public; local evidence stays private.
+# Local evidence, backups, third-party copyrighted papers/datasets, and agent configs stay private.
+.codex/
 experiments/*/data/*
 !experiments/*/data/scenarios.json
 !experiments/*/data/rr_v05_source_manifest.json
@@ -31,6 +33,7 @@ experiments/*/data/*
 **/private_exports/
 **/backups/
 **/papers/
+data/human_benchmarks/
 human-analysis/data/
 human-analysis/.vscode/
 *.sav

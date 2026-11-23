@@ -1,5 +1,5 @@
 """Create a private plan and inspect Gate A. This command cannot send model requests."""
-import argparse,hashlib,importlib.util,json,sys,zipfile,sqlite3
+import argparse,hashlib,importlib.util,json,os,sys,zipfile,sqlite3
 from pathlib import Path
 from datetime import datetime,timezone
 from tokenizers import Tokenizer
@@ -9,8 +9,8 @@ from journal import create,require_real_gate,status
 
 ROOT=Path(__file__).resolve().parent
 AUDIT=ROOT.parent/'coordinator-resume-20261116'
-V05=Path(r'C:\Users\Kayla\Documents\Codex\2026-11-14\referenced-chatgpt-conversation-this-is-an\work\EchoMind-v05-human-rr')
-HUMAN=Path(r'C:\Users\Kayla\Documents\Codex\2026-10-28\referenced-chatgpt-conversation-this-is-an-3\work\open-benchmark-discovery-20261030\calm\rr.csv')
+V05=Path(os.environ.get('ECHOMIND_V05_DIR', str(ROOT.parent / 'v05-human-rr')))
+HUMAN=Path(os.environ['ECHOMIND_HUMAN_CSV']) if 'ECHOMIND_HUMAN_CSV' in os.environ else ROOT / 'private_inputs' / 'rr.csv'
 DB=ROOT/'private_exports/rr-isolation-001.sqlite3'
 
 def filehash(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -31,7 +31,7 @@ def prepare():
     human_match=ref==saved
     if not human_match:raise RuntimeError('Human heldout reference mismatch')
     if filehash(HUMAN)!=a['human_csv']['sha256']:raise RuntimeError('Human file changed')
-    previous=json.loads(Path(r'C:\Users\Kayla\Documents\Codex\RR-ISOLATION-001\coordinator-20261116\verification_manifest.json').read_text(encoding='utf-8'))
+    previous=json.loads(Path(os.environ['ECHOMIND_RR_MANIFEST']).read_text(encoding='utf-8'))
     if not all(filehash(V05/name)==value for name,value in previous['unchanged_sha256'].items()):raise RuntimeError('Frozen file mismatch')
     if not DB.exists():create(DB,stim)
     stats=status(DB)

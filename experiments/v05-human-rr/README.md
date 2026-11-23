@@ -23,7 +23,7 @@ On Windows, double-click `Open_EchoMind_v05.cmd` to start the workbench in the b
 
 **2026-10-23：Memory Acquisition MVP v0.2 已作为 EchoMind 的独立实验接入。** 从 `启动EchoMind.bat` 进入 `http://127.0.0.1:8769/#acquisition`。七组记忆获取、21 份冻结快照、84 条默认 MOCK 决策；协议和手动 REAL smoke 步骤见 [MVP_PROTOCOL.md](MVP_PROTOCOL.md)。当前运行仅使用 `ECHOMIND_PILOT_DB` / `ECHOMIND_OFFLINE`，不会读取 SOS 项目的环境配置或文件。下文旧迁移记录保留其历史语境。
 
-LLM Agent 记忆、解释与行动研究工作台。当前独立目录为 `C:\Users\Kayla\Desktop\EchoMind`。
+LLM Agent 记忆、解释与行动研究工作台。当前独立目录为 `<repo-root>`。
 
 双击本目录 **启动EchoMind.bat**，打开 **http://127.0.0.1:8769/**。默认离线，可查看完整历史、编辑提示及运行 MOCK；使用教程见 [使用教程_研究审计.md](使用教程_研究审计.md)。新版代码、文档和数据库均在本目录运行，原 `SOS` 目录及其 `8768` 服务保留，两个数据库此后不会自动同步。
 

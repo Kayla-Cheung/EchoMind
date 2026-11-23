@@ -1,6 +1,6 @@
 # EchoMind Demo 2 · Context Injection MVP
 
-本实验现作为独立 EchoMind 项目维护，根目录 `C:\Users\Kayla\Desktop\EchoMind`。代码、数据库、备份和导出均在该目录内；运行不依赖 SOS 文件夹，也不使用 SOS 的数据库／离线环境变量。历史协议和旧记录保留原始标识以供追溯。
+本实验现作为独立 EchoMind 项目维护，根目录 `<repo-root>`。代码、数据库、备份和导出均在该目录内；运行不依赖 SOS 文件夹，也不使用 SOS 的数据库／离线环境变量。历史协议和旧记录保留原始标识以供追溯。
 
 协议 `memory_acquisition_v02`；独立于旧协议。角色为现有配置中的林知，20 岁、普通大学生。每批冻结身份及全部材料，不增加人格或临床标签。
 
@@ -91,7 +91,7 @@ REAL 前需填写已核实的输入／输出单价、币种和预算。每次尝
 双击 `启动EchoMind.bat`（调用 `start_mvp_windows.bat`），访问 `http://127.0.0.1:8769/#acquisition`。工作台使用 EchoMind 自己的 `data/pilot.sqlite3`；新旧协议各自统计。自动化验证全部使用临时数据库；最终保存的演示批次明确标为 MOCK，不是付费模型实验。
 
 ```powershell
-Set-Location C:\Users\Kayla\Desktop\EchoMind
+Set-Location <repo-root>
 # 只预览：不调用模型
 & 'C:\Program Files\Python311\python.exe' mvp_cli.py
 # 在 EchoMind 数据库新增 84 条 MOCK；--output 须选择尚不存在的新文件

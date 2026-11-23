@@ -1,5 +1,5 @@
 """Apply the owner's explicit 2026-11-17 authorization after independent preflight."""
-import hashlib,json,sqlite3,sys,urllib.request,zipfile
+import hashlib,json,os,sqlite3,sys,urllib.request,zipfile
 from pathlib import Path
 from decimal import Decimal
 from datetime import datetime,timezone
@@ -16,15 +16,15 @@ OLD=ROOT.parent/'coordinator-resume-20261116'
 sys.path.insert(0,str(OLD))
 from independent_audit import fingerprint,V05,DESKTOP
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
-AUTHFILE=Path(r'C:\Users\Kayla\Desktop\SOS\experiments\context_memory_pilot\.env')
+AUTHFILE=Path(os.environ['ECHOMIND_AUTHFILE'])
 cap=Decimal('.13');now=datetime.now(timezone.utc)
 assert price_window(now)=='offpeak','Not in authorized off-peak window'
-previous=json.loads(Path(r'C:\Users\Kayla\Documents\Codex\RR-ISOLATION-001\coordinator-20261116\verification_manifest.json').read_text(encoding='utf-8'))
+previous=json.loads(Path(os.environ['ECHOMIND_RR_MANIFEST']).read_text(encoding='utf-8'))
 assert all(sha(V05/k)==v for k,v in previous['unchanged_sha256'].items()),'Frozen source mismatch'
 audit=json.loads((OLD/'independent_audit.json').read_text(encoding='utf-8'))
 assert sha(ROOT/'private_inputs/calm_rr_v42.json')==sha(V05/'private_inputs/calm_rr_v42.json')
 stim=load_stimuli(ROOT/'private_inputs/calm_rr_v42.json')
-human=Path(r'C:\Users\Kayla\Documents\Codex\2026-10-28\referenced-chatgpt-conversation-this-is-an-3\work\open-benchmark-discovery-20261030\calm\rr.csv')
+human=Path(os.environ['ECHOMIND_HUMAN_CSV'])
 assert sha(human)==audit['human_csv']['sha256']
 assert sha(human.with_name('measures-v4.2.pdf'))=='76e6a0736f58d8b3bc36bf5fe811576b0d1a4400cffa32d1ceb2766ce20b91ae'
 ref=human_distribution(load_human_reference(human,(V05/'private_inputs/split_salt.txt').read_text().strip(),.20))
