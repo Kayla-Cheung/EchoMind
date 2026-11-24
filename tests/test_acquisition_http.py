@@ -40,7 +40,7 @@ class AcquisitionHTTPTests(unittest.TestCase):
             try:
                 self.assertTrue(api('/api/acquisition/bootstrap')['offline'])
                 self.assertEqual(api('/api/health')['app_name'],'EchoMind')
-                self.assertEqual(api('/api/health')['database'],str(database))
+                self.assertTrue(Path(api('/api/health')['database']).samefile(database))
                 self.assertFalse((Path(folder)/'must-not-create.sqlite3').exists())
                 req={'protocol':'memory_acquisition_v02','mode':'mock','repeats':1,'scenario_ids':['S1_near']}
                 preview=api('/api/acquisition/preview',req)

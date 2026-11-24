@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>EchoMind · 已有資料審查工作台</title>
+  <link rel="stylesheet" href="/data-audit.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-main">
+      <div class="eyebrow">ECHOMIND / EVIDENCE REVIEW · READ-ONLY SOURCES</div>
+      <h1>已有資料審查工作台</h1>
+      <p>從來源檔案 → 批次分母 → 結構化原文 → 可追溯人工決策。所有實驗資料庫皆以只讀交易開啟，審查紀錄另存於 append-only 歷史庫。</p>
+    </div>
+    <div class="topbar-actions">
+      <a class="btn btn-light" href="/workflow" target="_blank" rel="noopener">工作 SOP ↗</a>
+      <button id="rescanBtn" class="btn btn-light" type="button">重新盤點源庫</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="sources" role="tab">1 · 來源與批次分母</button>
+    <button class="tab" data-tab="inspect" role="tab">2 · 逐條審查與四維標註</button>
+    <button class="tab" data-tab="pairs" role="tab">3 · 同批配對對照</button>
+    <button class="tab" data-tab="rr" role="tab">4 · RR 聯動視圖</button>
+    <button class="tab" data-tab="exports" role="tab">5 · 盲編包與匯出</button>
+  </nav>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <main class="container">
+    <div id="cards" class="cards"></div>
+
+    <div class="notice">
+      <strong>審計邊界提醒：</strong>
+      先核對分母（主庫曾移除失敗與 MOCK 記錄，請對照清理前備份或 <code>reconciled-trials.sqlite3</code>）。各資料庫包含重複副本，表格筆數不可相加；同 ID 不同內容列為衝突，不自動選取。RR 的 1–4 分為語義相似度，已檢視的人類 held-out 僅作探索參照。
+    </div>
+
+    <div id="message" class="error-banner hidden" role="alert"></div>
+
+    <!-- TAB 1: SOURCES & DENOMINATORS -->
+    <section id="tab-sources" class="view active">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>選擇證據來源</h2>
+          <div id="rolePills" class="pill-group">
+            <button class="pill active" data-role="primary" type="button">核心實驗庫（推薦）</button>
+            <button class="pill" data-role="source" type="button">全部 source</button>
+            <button class="pill" data-role="rr" type="button">RR 量表庫</button>
+            <button class="pill" data-role="derived_recovery" type="button">恢復副本</button>
+            <button class="pill" data-role="backup" type="button">歷史備份</button>
+            <button class="pill" data-role="all" type="button">全部庫</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input id="dbSearch" type="search" placeholder="篩選路徑關鍵字：v03 / v04 / v05 / rr / backup / pilot">
+          <select id="database" aria-label="資料庫" class="grow"></select>
+          <button id="openInspectBtn" class="btn btn-primary" type="button">進入逐條審查 →</button>
+          <button id="exportInventory" class="btn btn-outline" type="button">匯出盤點 JSON</button>
+        </div>
+
+        <div id="dbMetaGrid" class="db-meta-grid"></div>
+        <div id="qualityHintBar" class="hint-bar"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>批次分層與完整分母（不跨批次合併）</h2>
+          <span class="muted">點擊任意批次列即可直接進入該批次的逐條審查或配對對照</span>
+        </div>
+        <div class="scroll" id="groups"></div>
+      </section>
+
+      <div class="grid-two">
+        <details class="panel" open>
+          <summary>結構檢查問題與快照依賴</summary>
+          <pre id="issues"></pre>
+        </details>
+        <details class="panel">
+          <summary>跨檔案內容衝突與盤點邊界</summary>
+          <h3>跨檔案內容衝突</h3>
+          <pre id="conflicts"></pre>
+          <h3>盤點邊界聲明</h3>
+          <pre id="limits"></pre>
+        </details>
+      </div>
+    </section>
+
+    <!-- TAB 2: ROW INSPECTOR & 4-AXIS REVIEW -->
+    <section id="tab-inspect" class="view">
+      <section class="panel compact">
+        <div class="inspect-context">
+          <div>
+            <span class="muted">當前資料庫：</span>
+            <strong id="curDbPath" class="mono">—</strong>
+          </div>
+          <button id="backSourcesBtn" class="btn btn-sm btn-ghost" type="button">切換資料庫</button>
+        </div>
+
+        <div class="filter-grid">
+          <label>
+            <span>資料表</span>
+            <select id="table" aria-label="資料表"></select>
+          </label>
+          <label id="batchFilterWrap">
+            <span>批次 batch_id</span>
+            <select id="fBatch"><option value="">全部批次</option></select>
+          </label>
+          <label id="sourceFilterWrap">
+            <span>來源 source</span>
+            <select id="fSource">
+              <option value="">全部</option>
+              <option value="LIVE_LLM_API">LIVE_LLM_API</option>
+              <option value="MOCK_NOT_LLM">MOCK_NOT_LLM</option>
+            </select>
+          </label>
+          <label id="statusFilterWrap">
+            <span>狀態 status</span>
+            <select id="fStatus">
+              <option value="">全部</option>
+              <option value="complete">complete</option>
+              <option value="error">error</option>
+            </select>
+          </label>
+          <label id="flagFilterWrap">
+            <span>品質風險提示</span>
+            <select id="fFlag">
+              <option value="">全部</option>
+              <option value="mixed_neutral_risk">疑似混合歸因壓扁為 neutral</option>
+              <option value="s4_memory_spillover">S4 非社交控制記憶溢出</option>
+              <option value="cross_model_coder">跨模型編碼</option>
+              <option value="low_confidence">低置信度 (&lt;0.70)</option>
+              <option value="error_record">異常 / 失敗</option>
+              <option value="mock_record">MOCK 記錄</option>
+              <option value="has_issue">結構檢查異常列</option>
+            </select>
+          </label>
+          <label>
+            <span>審查狀態</span>
+            <select id="fReview">
+              <option value="">全部</option>
+              <option value="unreviewed">未審查</option>
+              <option value="include">建議納入</option>
+              <option value="uncertain">待確認</option>
+              <option value="exclude">建議排除</option>
+              <option value="coded">已完成四維標註</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="toolbar">
+          <input id="query" type="search" class="grow" placeholder="全文搜尋所有欄位（不分大小寫，可搜 trial ID、條件、關鍵詞、error）">
+          <button id="search" class="btn btn-primary" type="button">篩選</button>
+          <button id="resetFilters" class="btn btn-ghost" type="button">重置</button>
+          <span id="count" class="muted"></span>
+        </div>
+      </section>
+
+      <div class="review-layout">
+        <!-- Left List -->
+        <aside class="panel list-pane">
+          <div id="rows" class="row-list"></div>
+          <div class="pager">
+            <button id="prev" class="btn btn-sm btn-ghost" type="button">上一頁</button>
+            <span id="pageText" class="muted"></span>
+            <button id="next" class="btn btn-sm btn-ghost" type="button">下一頁</button>
+          </div>
+        </aside>
+
+        <!-- Center Evidence Reader -->
+        <section class="panel reader-pane">
+          <div class="reader-head">
+            <div class="pill-group">
+              <button id="viewReadableBtn" class="pill active" type="button">可讀證據視圖</button>
+              <button id="viewRawBtn" class="pill" type="button">原始完整 JSON</button>
+            </div>
+            <div class="nav-btns">
+              <button id="prevRowBtn" class="btn btn-sm btn-ghost" type="button" title="快捷鍵 ←">← 上一筆</button>
+              <button id="nextRowBtn" class="btn btn-sm btn-ghost" type="button" title="快捷鍵 →">下一筆 →</button>
+            </div>
+          </div>
+          <div id="readableView" class="readable-view">
+            <div class="empty-state">請在左側選取一筆記錄開始審查。</div>
+          </div>
+          <pre id="raw" class="hidden">選取一列開始。</pre>
+        </section>
+
+        <!-- Right Decision & 4-Axis Coding Form -->
+        <aside class="panel decision-pane">
+          <div class="panel-head">
+            <h2>可追溯審查決策</h2>
+            <span class="badge b-warn" title="此介面顯示條件與來源，不應宣稱為盲編碼；正式盲編請至分頁 5 匯出盲編包">揭盲審查</span>
+          </div>
+          <p class="muted small">
+            排除僅改變審查決策，不刪除原始證據。每筆紀錄以 append-only 追加並鎖定列 SHA-256；來源改動後會自動拒絕舊雜湊。
+          </p>
+
+          <div class="form-block">
+            <label for="reviewer">審查者姓名／代號 *</label>
+            <input id="reviewer" type="text" placeholder="例如：kayla / coder_1">
+          </div>
+
+          <div class="form-block">
+            <label>審查決策 *</label>
+            <div class="seg-group" data-field="decision">
+              <button type="button" class="seg seg-unc selected" data-val="uncertain">待確認</button>
+              <button type="button" class="seg seg-inc" data-val="include">建議納入</button>
+              <button type="button" class="seg seg-exc" data-val="exclude">建議排除</button>
+            </div>
+            <select id="decision" class="hidden" aria-label="決策">
+              <option value="uncertain">待確認</option>
+              <option value="include">建議納入</option>
+              <option value="exclude">建議排除</option>
+            </select>
+          </div>
+
+          <div class="form-block">
+            <label for="note">證據依據與理由 *</label>
+            <div class="chip-row">
+              <button type="button" class="chip" data-note="解釋與行動語意一致，回答完整。">解釋與行動一致</button>
+              <button type="button" class="chip" data-note="文本同時含威脅猜疑與良性替代解釋，舊機器編碼壓扁為 neutral。">混合歸因壓扁</button>
+              <button type="button" class="chip" data-note="非社交 S4 控制情境出現先前社交記憶溢出。">S4 記憶溢出</button>
+              <button type="button" class="chip" data-note="MOCK_NOT_LLM 流程檢查記錄，不納入模型行為分析。">排除 MOCK</button>
+              <button type="button" class="chip" data-note="API 呼叫失敗，保留作為批次分母記錄，不納入內容編碼。">失敗保留分母</button>
+            </div>
+            <textarea id="note" rows="3" placeholder="寫明原文依據、解釋與行動的分歧，或排除理由（必填）。"></textarea>
+          </div>
+
+          <details id="codingBox" class="coding-details" open>
+            <summary>v0.5 四維測量重編碼（可選 · 揭盲複核）</summary>
+            <div class="coding-body">
+              <div class="axis-row">
+                <span>1. 威脅歸因 / 猜疑</span>
+                <div class="seg-group mini" data-field="threat_attribution">
+                  <button type="button" class="seg" data-val="0">0 無</button>
+                  <button type="button" class="seg" data-val="1">1 輕微</button>
+                  <button type="button" class="seg" data-val="2">2 明確</button>
+                </div>
+              </div>
+              <div class="axis-row">
+                <span>2. 良性歸因 / 替代解釋</span>
+                <div class="seg-group mini" data-field="benign_attribution">
+                  <button type="button" class="seg" data-val="0">0 無</button>
+                  <button type="button" class="seg" data-val="1">1 附帶</button>
+                  <button type="button" class="seg" data-val="2">2 明確</button>
+                </div>
+              </div>
+              <div class="axis-row">
+                <span>3. 記憶侵入 / 不當遷移</span>
+                <div class="seg-group mini" data-field="memory_intrusion">
+                  <button type="button" class="seg" data-val="0">0 無</button>
+                  <button type="button" class="seg" data-val="1">1 隱含</button>
+                  <button type="button" class="seg" data-val="2">2 明確</button>
+                </div>
+              </div>
+              <div class="axis-row">
+                <span>4. 行為迴避 / 退縮</span>
+                <div class="seg-group mini" data-field="behavioral_avoidance">
+                  <button type="button" class="seg" data-val="0">0 接近</button>
+                  <button type="button" class="seg" data-val="1">1 觀望</button>
+                  <button type="button" class="seg" data-val="2">2 迴避</button>
+                </div>
+              </div>
+              <label class="check-row">
+                <input id="mixedCheck" type="checkbox">
+                <span>標記為<strong>混合歸因</strong>（威脅 + 良性並存）</span>
+              </label>
+            </div>
+          </details>
+
+          <div class="save-bar">
+            <button id="save" class="btn btn-primary" type="button">保存審查紀錄</button>
+            <button id="saveNext" class="btn btn-outline" type="button" title="快捷鍵 Ctrl+Enter">保存並下一筆</button>
+          </div>
+          <div class="sub-actions">
+            <button id="loadLastBtn" class="btn btn-sm btn-ghost" type="button">帶入上次決策以便修訂</button>
+            <span id="rowHashShort" class="mono muted"></span>
+          </div>
+
+          <details class="history-details" open>
+            <summary>本列歷次追加紀錄 (<span id="histCount">0</span>)</summary>
+            <div id="reviewHistoryList" class="history-list">尚未選取記錄。</div>
+          </details>
+        </aside>
+      </div>
+    </section>
+
+    <!-- TAB 3: SAME-DB PAIRED COMPARISON -->
+    <section id="tab-pairs" class="view">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>同庫同批配對對照與 <code>pairing.csv</code>（SOP A4）</h2>
+          <span class="muted">嚴格限定單一資料庫與單一批次，缺側保留缺失，不自動補齊或跨庫合併</span>
+        </div>
+        <div class="toolbar">
+          <label class="inline-lbl">
+            <span>批次</span>
+            <select id="pairBatchSel"><option value="">全部（建議選定單一批次）</option></select>
+          </label>
+          <label class="inline-lbl">
+            <span>配對鍵</span>
+            <select id="pairModeSel">
+              <option value="auto">自動辨識</option>
+              <option value="prompt">v0.3 Prompt (P0 ↔ P1)</option>
+              <option value="temporal">v0.4 時間錨點 (T1 ↔ T2)</option>
+              <option value="ablation">輸出格式 (free ↔ channels)</option>
+              <option value="valence">記憶效價 (neutral ↔ negative)</option>
+            </select>
+          </label>
+          <label class="check-row compact">
+            <input id="pairOnlyChanged" type="checkbox">
+            <span>僅看機器標籤變化</span>
+          </label>
+          <label class="check-row compact">
+            <input id="pairOnlyMissing" type="checkbox">
+            <span>僅看缺側配對</span>
+          </label>
+          <button id="loadPairsBtn" class="btn btn-primary" type="button">載入配對</button>
+          <button id="exportPairingCsvBtn" class="btn btn-outline" type="button">匯出 pairing.csv</button>
+        </div>
+        <div id="pairSummary" class="pair-summary"></div>
+      </section>
+      <div id="pairList" class="pair-list"></div>
+    </section>
+
+    <!-- TAB 4: RR LINKED INSPECTOR -->
+    <section id="tab-rr" class="view">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>RR 量表聯動審查視圖（episodes ↔ requests ↔ ratings）</h2>
+          <div id="rrDbButtons" class="pill-group"></div>
+        </div>
+        <div id="rrContainer">
+          <div class="empty-state">選擇一個 RR 資料庫檢視完整聯動摘要。</div>
+        </div>
+      </section>
+    </section>
+
+    <!-- TAB 5: BLIND PACKET & EXPORTS -->
+    <section id="tab-exports" class="view">
+      <div class="grid-two">
+        <section class="panel">
+          <h2>1 · SOP A3 正式盲編碼包匯出</h2>
+          <p class="muted">
+            匯出隨機洗牌且去除 <code>condition / model / prompt_variant / machine_coding</code> 的純文本盲編 CSV，並將對照映射 JSON 另存於 <code>private_inputs/</code>，不可交給盲編碼員。
+          </p>
+          <div class="form-block">
+            <label for="blindBatchSel">目標批次（來自當前所選資料庫）</label>
+            <select id="blindBatchSel"><option value="">當前庫全部 complete 試次</option></select>
+          </div>
+          <div class="form-block">
+            <label for="blindSourceSel">來源過濾</label>
+            <select id="blindSourceSel">
+              <option value="LIVE_LLM_API">僅 LIVE_LLM_API（推薦）</option>
+              <option value="ALL">全部</option>
+            </select>
+          </div>
+          <div class="form-block">
+            <label for="blindSeedInput">洗牌種子（固定可重現）</label>
+            <input id="blindSeedInput" type="text" value="echomind-blind-20261123">
+          </div>
+          <div class="toolbar">
+            <button id="dlBlindCsvBtn" class="btn btn-primary" type="button">下載盲編題本 CSV</button>
+            <button id="dlBlindMapBtn" class="btn btn-outline" type="button">下載私密映射 JSON</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>2 · 審查決策與盤點匯出</h2>
+          <p class="muted">隨時匯出完整盤點、append-only 歷次事件 JSON，或含四維標註的最新審查彙總 CSV。</p>
+          <div class="toolbar">
+            <button id="exportReviews" class="btn btn-primary" type="button">匯出歷次審查 JSON</button>
+            <button id="exportReviewsCsv" class="btn btn-outline" type="button">匯出最新審查 + 四維 CSV</button>
+            <button id="exportInventory2" class="btn btn-outline" type="button">匯出盤點 JSON</button>
+          </div>
+          <div class="divider"></div>
+          <h3>SOP A5 · 凍結正式審查版本命令</h3>
+          <p class="muted small">完成一個批次的審查後，在 <code>repository/</code> 執行以下命令建立不可覆寫的決策快照：</p>
+          <pre>python research_ops.py freeze-reviews --audit-id EM-AUDIT-002 --version v1</pre>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="/data-audit.js"></script>
+</body>
+</html>

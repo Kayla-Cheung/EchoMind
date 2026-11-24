@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "experiments": [
+    {"id": "workbench", "path": ".", "protocol": "MVP_PROTOCOL.md", "status": "exploratory", "measurement": "interpretation_speech_intended_action", "private_inputs_required": false},
+    {"id": "v03-prompt-framing", "path": "experiments/v03-prompt-framing", "protocol": "MVP_PROTOCOL.md", "status": "historical_snapshot", "measurement": "interpretation_speech_intended_action", "private_inputs_required": false},
+    {"id": "v04-temporal-context", "path": "experiments/v04-temporal-context", "protocol": "TEMPORAL_CONTEXT_V04_REPORT.md", "status": "historical_snapshot", "measurement": "interpretation_speech_intended_action", "private_inputs_required": false},
+    {"id": "v05-human-rr", "path": "experiments/v05-human-rr", "protocol": "HUMAN_RR_V05_PROTOCOL.md", "status": "historical_snapshot", "measurement": "ordinal_similarity_1_to_4", "private_inputs_required": true},
+    {"id": "rr-isolation", "path": "experiments/rr-isolation", "protocol": "isolation_protocol.py", "status": "historical_snapshot", "measurement": "ordinal_similarity_1_to_4", "private_inputs_required": true}
+  ]
+}

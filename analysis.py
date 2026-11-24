@@ -1,21 +1,38 @@
 """Exploratory summaries. MOCK and live records are never pooled."""
 from collections import defaultdict
+import json
 
 from design import CONDITIONS
+
+
+def require_comparable(rows, *, models=False):
+    fields = ['batch_id', 'protocol', 'prompt_version', 'coder_version',
+              'protocol_hash', 'evaluator_provider', 'evaluator_model']
+    if not models: fields += ['provider', 'model']
+    mixed = [field for field in fields if len({r.get(field) for r in rows}) > 1]
+    if mixed:
+        raise ValueError('Select one comparable stratum before summarizing: ' + ', '.join(mixed))
+    groups = defaultdict(list)
+    for row in rows: groups[(row.get('provider'),row.get('model'))].append(row)
+    for subset in groups.values():
+        for field in ('model_spec','model_parameters','evaluator_spec','design_hash','evidence_rule'):
+            if len({json.dumps(r.get(field),sort_keys=True,ensure_ascii=False) for r in subset}) > 1:
+                raise ValueError('Select one comparable model configuration before summarizing: ' + field)
 
 
 def summarize(records, source="LIVE_LLM_API", filters=None):
     filters = filters or {}
     rows = [r for r in records if r.get("source") == source and r.get("status") == "complete"]
     for field in ("profile_id", "model", "scenario_id", "condition", "batch_id",
-                  "evaluator_provider", "evaluator_model", "coder_version"):
+                  "evaluator_provider", "evaluator_model", "coder_version", "protocol", "prompt_version", "protocol_hash"):
         if filters.get(field):
             rows = [r for r in rows if r.get(field) == filters[field]]
+    require_comparable(rows)
     def code(r):
         return (r.get("human_review") or {}).get("coding") or r.get("machine_coding") or {}
     def rates(items):
-        ni = [r for r in items if code(r).get("interpretation") != "unclear"]
-        na = [r for r in items if code(r).get("action") != "other"]
+        ni = [r for r in items if code(r).get("interpretation") in ("positive", "neutral", "negative")]
+        na = [r for r in items if code(r).get("action") in ("approach", "wait", "avoid")]
         return {"n": len(items), "interpretation_n": len(ni), "action_n": len(na),
             "negative_rate": sum(code(r).get("interpretation") == "negative" for r in ni) / len(ni) if ni else None,
             "avoid_rate": sum(code(r).get("action") == "avoid" for r in na) / len(na) if na else None}
@@ -46,9 +63,10 @@ def model_comparison(records, source="LIVE_LLM_API", filters=None):
     """Per-model descriptive outcomes, including failed trials and usage."""
     filters = filters or {}
     rows = [r for r in records if r.get("source") == source]
-    for key in ("profile_id", "provider", "model", "scenario_id", "batch_id", "evaluator_model", "evaluator_provider", "coder_version"):
+    for key in ("profile_id", "provider", "model", "scenario_id", "batch_id", "evaluator_model", "evaluator_provider", "coder_version", "protocol", "prompt_version", "protocol_hash"):
         if filters.get(key):
             rows = [r for r in rows if r.get(key) == filters[key]]
+    require_comparable(rows, models=True)
     def coding(r):
         return (r.get("human_review") or {}).get("coding") or r.get("machine_coding") or {}
     def usage(r, kind, field):

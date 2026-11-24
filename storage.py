@@ -171,10 +171,27 @@ class Store:
             if not row:
                 raise ValueError("找不到试次")
             record = json.loads(row[0])
-            record["human_review"] = {"coding": coding, "note": reviewer_note,
-                "timestamp": datetime.now(timezone.utc).isoformat()}
-            db.execute("UPDATE trials SET payload=? WHERE id=?", (json.dumps(record, ensure_ascii=False), trial_id))
-            return record
+        # Legacy UI compatibility: append a sidecar event, never rewrite trial evidence.
+        from history import digest
+        review = {"trial_id": trial_id, "coding": coding, "note": reviewer_note,
+                  "timestamp": datetime.now(timezone.utc).isoformat(),
+                  "payload_hash": digest(record), "source_database": str(self.path)}
+        journal = self.path.with_name(self.path.stem + "-reviews.sqlite3")
+        with self.lock, closing(sqlite3.connect(journal)) as reviews:
+            reviews.executescript("""
+                CREATE TABLE IF NOT EXISTS review_events (id INTEGER PRIMARY KEY, payload TEXT NOT NULL);
+                CREATE TRIGGER IF NOT EXISTS review_events_no_update BEFORE UPDATE ON review_events
+                BEGIN SELECT RAISE(ABORT,'append-only review history'); END;
+                CREATE TRIGGER IF NOT EXISTS review_events_no_delete BEFORE DELETE ON review_events
+                BEGIN SELECT RAISE(ABORT,'append-only review history'); END;
+            """)
+            with reviews:
+                reviews.execute("INSERT INTO review_events(payload) VALUES (?)",
+                                (json.dumps(review, ensure_ascii=False, allow_nan=False),))
+        # An annotated return value is a view. Store.trials() still returns original evidence.
+        record["human_review"] = review
+        record["review_journal"] = str(journal)
+        return record
 
     def import_human(self, csv_text):
         reader = csv.DictReader(io.StringIO(csv_text))
